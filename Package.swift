@@ -16,7 +16,7 @@ let package = Package(
             "ReviewGuideCore", "Highlight", "Render",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
         ]),
-        .testTarget(name: "ReviewGuideCoreTests", dependencies: ["ReviewGuideCore"], resources: [.copy("../Fixtures")]),
+        .testTarget(name: "ReviewGuideCoreTests", dependencies: ["ReviewGuideCore", "reviewguide"], resources: [.copy("../Fixtures")]),
         .testTarget(name: "HighlightTests", dependencies: ["Highlight"]),
         .testTarget(name: "RenderTests", dependencies: ["Render"]),
     ]

@@ -39,14 +39,14 @@ import Testing
         #expect(throws: UsageError.self) { try DiffLoader.load(git: repo.git, range: "main", exclude: []) }
     }
 
-    @Test func unknownRevNamesTheCommand() throws {
+    @Test func unknownRevNamesTheRangeAndTheCommand() throws {
         let repo = try TempRepo.standard()
         do {
             _ = try DiffLoader.load(git: repo.git, range: "main..nope", exclude: [])
-            Issue.record("expected a GitError")
-        } catch let error as GitError {
-            #expect(error.command.contains("nope^{commit}"))
-            #expect(error.status != 0)
+            Issue.record("expected a UsageError")
+        } catch let error as UsageError {
+            #expect(error.message.hasPrefix("range 'main..nope': 'nope' is not a commit in "))
+            #expect(error.message.contains("rev-parse --verify nope^{commit}"))
         }
     }
 
