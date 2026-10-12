@@ -1,36 +1,107 @@
-# Builds the universal macOS release when a v* tag is pushed.
+# On a v* tag: builds a universal reviewguide, publishes it as a GitHub release, and points the
+# Homebrew tap's formula at it. packaging/homebrew/README.md documents TAP_TOKEN.
 name: release
+
 on:
   push:
     tags: ["v*"]
+
 permissions:
   contents: write
+
 jobs:
   build:
     runs-on: macos-26
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+      tarball: ${{ steps.package.outputs.tarball }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Stamp the version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          printf '// Written by the release workflow.\nlet reviewguideVersion = "%s"\n' "$version" > Sources/reviewguide/Version.swift
+
       - name: Test
         run: swift test
-      - name: Build
-        run: swift build -c release --arch arm64 --arch x86_64
-      - name: Package
+
+      - name: Build and package
+        id: package
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
+          swift build -c release --arch arm64 --arch x86_64
           bin="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
           stage="reviewguide-$version"
           mkdir -p "$stage/licenses"
           cp "$bin/reviewguide" "$stage/"
-          cp -R "$bin"/*.bundle "$stage/"
+          for b in "$bin"/*.bundle; do case "$b" in *Tests.bundle) ;; *) cp -R "$b" "$stage/" ;; esac; done
           cp LICENSE "$stage/licenses/ReviewGuide"
-          for l in Grammars/*/LICENSE; do cp "$l" "$stage/licenses/tree-sitter-$(basename "$(dirname "$l")")"; done
-          "$stage/reviewguide" format > /dev/null
-          tar -czf "$stage-macos.tar.gz" "$stage"
-          shasum -a 256 "$stage-macos.tar.gz" | tee "$stage-macos.tar.gz.sha256"
-      - name: Release
+          find Grammars -name LICENSE | while read -r l; do
+            cp "$l" "$stage/licenses/tree-sitter-$(echo "${l#Grammars/}" | sed 's|/LICENSE$||; s|/|-|g')"
+          done
+          lipo -archs "$stage/reviewguide" | grep -q x86_64
+          lipo -archs "$stage/reviewguide" | grep -q arm64
+          [ "$("$stage/reviewguide" --version)" = "$version" ]
+          "$stage/reviewguide" format | grep -q '^# Story format'
+          tarball="reviewguide-$version-macos-universal.tar.gz"
+          tar -czf "$tarball" "$stage"
+          {
+            echo "version=$version"
+            echo "tarball=$tarball"
+            echo "sha256=$(shasum -a 256 "$tarball" | cut -d' ' -f1)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
+          TARBALL: ${{ steps.package.outputs.tarball }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          gh release upload "$GITHUB_REF_NAME" "reviewguide-$version-macos.tar.gz" "reviewguide-$version-macos.tar.gz.sha256" --clobber
+          set -euo pipefail
+          previous="$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          git log --format='- %s' "$previous..$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" "$TARBALL" --title "$GITHUB_REF_NAME" --notes-file notes.md
+
+  tap:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: reviewguide
+
+      - uses: actions/checkout@v4
+        with:
+          repository: nevyn/homebrew-tap
+          token: ${{ secrets.TAP_TOKEN }}
+          path: tap
+
+      - name: Update Formula/reviewguide.rb
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.build.outputs.version }}
+          SHA256: ${{ needs.build.outputs.sha256 }}
+          TARBALL: ${{ needs.build.outputs.tarball }}
+        run: |
+          set -eu
+          url="https://github.com/nevyn/ReviewGuide/releases/download/$TAG/$TARBALL"
+          mkdir -p tap/Formula
+          sed -e "s|^  url \".*\"$|  url \"$url\"|" \
+              -e "s|^  sha256 \".*\"$|  sha256 \"$SHA256\"|" \
+              reviewguide/packaging/homebrew/reviewguide.rb > tap/Formula/reviewguide.rb
+          grep -qF "url \"$url\"" tap/Formula/reviewguide.rb || { echo "url line not rewritten in Formula/reviewguide.rb" >&2; exit 1; }
+          grep -qF "sha256 \"$SHA256\"" tap/Formula/reviewguide.rb || { echo "sha256 line not rewritten in Formula/reviewguide.rb" >&2; exit 1; }
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/reviewguide.rb
+          if git diff --cached --quiet; then
+            echo "Formula/reviewguide.rb already points at $VERSION"
+            exit 0
+          fi
+          git commit -m "reviewguide $VERSION"
+          git push

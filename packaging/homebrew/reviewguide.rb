@@ -1,13 +1,11 @@
-# Template for nevyn/homebrew-tap Formula/reviewguide.rb; scripts/release.sh fills VERSION and SHA256.
 class Reviewguide < Formula
   desc "Review guides: the story of a code change, told next to every changed line"
   homepage "https://github.com/nevyn/ReviewGuide"
-  url "https://github.com/nevyn/ReviewGuide/releases/download/v@VERSION@/reviewguide-@VERSION@-macos.tar.gz"
-  sha256 "@SHA256@"
+  url "https://github.com/nevyn/ReviewGuide/releases/download/v0.0.0/reviewguide-0.0.0-macos-universal.tar.gz"
+  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
   license "MIT"
-  version "@VERSION@"
 
-  depends_on :macos
+  depends_on macos: :sonoma
 
   def install
     # The resource bundles must sit beside the real executable; bin gets a symlink.
