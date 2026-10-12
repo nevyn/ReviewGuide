@@ -74,7 +74,9 @@ public enum HunkPick: Sendable, Equatable {
 public enum LinePick: Sendable, Equatable {
     /// 1-based, inclusive positions in the hunk body.
     case range(Int, Int)
-    /// From the first line containing `from` through the next line at or after it containing `to`.
-    /// The hunk is the one containing `from`; `hunks` is `.all` alongside this pick.
+    /// From the one line containing `from` through the first line at or after it containing `to`, in the same hunk.
+    /// Both anchors match context and added lines, and deleted lines only when no such line contains the text.
+    /// Deleted lines travel with the next non-deleted line in their hunk (the previous one when they end it), so the
+    /// range also covers the deletions just before `from`. `hunks` is `.all` alongside this pick.
     case anchored(from: String, to: String)
 }
