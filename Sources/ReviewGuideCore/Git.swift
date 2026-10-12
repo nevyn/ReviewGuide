@@ -75,14 +75,17 @@ enum Subprocess {
         if !passStderrThrough { process.standardError = err }
         try process.run()
 
-        // Drain stderr concurrently so that neither pipe fills up and blocks the child.
+        // Drain stderr on its own thread so that neither pipe fills up and blocks the child. A dedicated Thread,
+        // not a dispatch queue: callers on a saturated cooperative pool would starve a queued drain forever.
         let errData = LockedData()
-        let group = DispatchGroup()
-        if !passStderrThrough {
-            DispatchQueue.global().async(group: group) { errData.set(err.fileHandleForReading.readDataToEndOfFile()) }
+        let drained = DispatchSemaphore(value: 0)
+        if passStderrThrough {
+            drained.signal()
+        } else {
+            Thread { errData.set(err.fileHandleForReading.readDataToEndOfFile()); drained.signal() }.start()
         }
         let outData = out.fileHandleForReading.readDataToEndOfFile()
-        group.wait()
+        drained.wait()
         process.waitUntilExit()
         return Result(status: process.terminationStatus, stdout: outData, stderr: errData.get())
     }
