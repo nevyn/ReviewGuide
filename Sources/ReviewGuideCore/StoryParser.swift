@@ -420,6 +420,13 @@ private struct Parser {
                     lines = .anchored(from: anchor, to: to)
                 }
                 i += 2
+            } else if i < tokens.count, tokens[i] == .word("until") {
+                guard i + 1 < tokens.count, case .quoted(let until) = tokens[i + 1] else {
+                    return fail("'until' must be followed by a quoted anchor")
+                }
+                if until.isEmpty { return fail("the 'until' anchor is empty") }
+                lines = .anchoredUntil(from: anchor, until: until)
+                i += 2
             } else {
                 hunks = .anchor(anchor)
             }

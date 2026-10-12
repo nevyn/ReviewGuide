@@ -80,4 +80,7 @@ public enum LinePick: Sendable, Equatable {
     /// range also covers the deletions just before `from`. A `nil` `to` (written `to end`) runs to the end of the hunk.
     /// `hunks` is `.all` alongside this pick.
     case anchored(from: String, to: String?)
+    /// Like `anchored`, but ending just before the first line after `from` that contains `until`, and before the
+    /// deletions attached to that line. Written `@ "from" until "text"`.
+    case anchoredUntil(from: String, until: String)
 }

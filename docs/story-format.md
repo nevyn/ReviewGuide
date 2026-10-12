@@ -89,6 +89,7 @@ One selector per line in a `hunks` fence. `#` starts a comment. Blank lines are 
 | `lines 5-12` | Lines 5 through 12 of the hunk body, 1-based, context lines included. |
 | `@ "from" to "to"` | From the line containing `from` through the first line at or after it, in the same hunk, that contains `to`. Replaces the hunks part: `from` must be on exactly one line of the file. |
 | `@ "from" to end` | From the line containing `from` through the end of its hunk. |
+| `@ "from" until "text"` | From the line containing `from` up to, not including, the next line that contains `text`, and the deletions directly before that line. For a range that ends where the next function begins. |
 
 An anchored range reads like the new file: `from` and `to` match context and added lines, and match deleted lines only when no such line contains the text. Deleted lines travel with the line after them (with the line before them when they end the hunk), so a range never splits a replacement between its old and new side.
 

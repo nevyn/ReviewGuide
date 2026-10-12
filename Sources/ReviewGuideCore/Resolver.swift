@@ -106,6 +106,9 @@ public enum Resolver {
         if case .anchored(let from, let to) = selector.lines {
             return anchoredRange(file: file, from: from, to: to)
         }
+        if case .anchoredUntil(let from, let until) = selector.lines {
+            return anchoredRange(file: file, from: from, to: until, exclusive: true)
+        }
 
         let hunks: [Hunk]
         switch selector.hunks {
@@ -137,7 +140,7 @@ public enum Resolver {
     /// Resolves `@ "from" to "to"` and `@ "from" to end`. Anchors match the new side (context and added lines), and deleted lines only
     /// when the text is on no new-side line. Deleted lines travel with the line after them, or with the line before
     /// them when they end the hunk, so the range never splits a replacement.
-    private static func anchoredRange(file: DiffFile, from: String, to: String?) -> Outcome<Pick> {
+    private static func anchoredRange(file: DiffFile, from: String, to: String?, exclusive: Bool = false) -> Outcome<Pick> {
         func describe(_ hunk: Hunk, _ i: Int) -> String {
             let line = hunk.lines[i]
             return "#\(hunk.number) \(line.old.map(String.init) ?? "-")/\(line.new.map(String.init) ?? "-")"
@@ -160,12 +163,19 @@ public enum Resolver {
 
         let end: Int
         if let to {
-            let rest = hunk.lines.indices[start...]
+            let rest = hunk.lines.indices[(exclusive ? start + 1 : start)...]
             let newEnd = rest.first { hunk.lines[$0].kind != .del && hunk.lines[$0].text.contains(to) }
             guard let found = newEnd ?? rest.first(where: { hunk.lines[$0].text.contains(to) }) else {
                 return .failure("no line from \"\(from)\" (\(describe(hunk, start))) to the end of '\(file.path)' #\(hunk.number) contains \"\(to)\"")
             }
-            end = found
+            if exclusive {
+                // The deletions just before the `until` line travel with it, so they stay out too.
+                var last = found - 1
+                while last > start, hunk.lines[last].kind == .del { last -= 1 }
+                end = last
+            } else {
+                end = found
+            }
         } else {
             end = hunk.lines.count - 1
         }
@@ -174,7 +184,7 @@ public enum Resolver {
         if hunk.lines[start].kind != .del {
             while lower > 0, hunk.lines[lower - 1].kind == .del { lower -= 1 }
         }
-        if hunk.lines[end].kind != .del, hunk.lines[(end + 1)...].allSatisfy({ $0.kind == .del }) {
+        if !exclusive, hunk.lines[end].kind != .del, hunk.lines[(end + 1)...].allSatisfy({ $0.kind == .del }) {
             upper = hunk.lines.count - 1
         }
         return .success(.hunks(file, [(hunk, lower..<(upper + 1))]))

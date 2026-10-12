@@ -68,6 +68,15 @@ private func lines(_ resolution: Resolution, section: Int) -> [Range<Int>] {
         #expect(r.problems == [])
     }
 
+    @Test func untilStopsBeforeItsLineAndTheDeletionsAttachedToIt() throws {
+        let r = try analyze([
+            ("a", ["Clock.swift @ \"struct Clock\" until \"clock every hour\"", "Block.swift @ \"line1\" until \"line4\""]),
+            ("b", ["Clock.swift @ \"clock every hour\" to end", "Block.swift @ \"line4\" to end"]),
+        ])
+        #expect(lines(r, section: 0) == [0..<4])
+        #expect(r.problems == [])
+    }
+
     @Test func toOnAReplacementTakesItsNewSideAndTheDeletionsBeforeIt() throws {
         let r = try analyze([
             ("a", ["Clock.swift @ \"var threshold\" to \"clock every hour\""]),
