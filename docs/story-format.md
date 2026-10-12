@@ -1,0 +1,110 @@
+# Story format
+
+A story is a CommonMark document with GitHub extensions (tables, strikethrough, autolinks, footnotes, alerts) plus three conventions: front matter, `##` sections, and a `hunks` fence per section. Raw HTML is passed through; the story is the author's own text.
+
+````markdown
+---
+title: Station clock drift fix
+meta: GL-1234 · iOS 9.12
+range: origin/main...HEAD
+head: 4af1844a
+exclude: ["*.png", "*.pbxproj"]
+---
+Two sentences that summarise the change. Rendered in the page header.
+
+## Prologue · The bug in one example
+Prose. A claim with a source.[^crash]
+
+[^crash]: 412 crashes in 9.11, all in `Station.resync()`.
+
+## Chapter 1 · The new primitive {#primitive}
+Prose.
+
+```hunks
+Sources/Clock/Drift.swift
+Station.swift @ "func resync("
+Station.swift #3 lines 1-12
+Station.swift @ "let skew" to "}"
+Sources/Clock/Station.swift #1 again
+```
+
+> [!QUESTION]
+> Should a skew above 5 s also log?
+
+# Appendix
+
+## Backend payload
+```json attachment "GET /stations, anonymised"
+{"id": 1, "skew_ms": 5200}
+```
+````
+
+## Front matter
+
+A `---` block at the very top. One `key: value` per line; a value is a bare string, a double-quoted string, or a flow list of double-quoted strings. No other YAML.
+
+| Key | Required | Meaning |
+|---|---|---|
+| `title` | yes | The page heading. |
+| `meta` | no | One line under the heading. |
+| `range` | no | The git diff range. `--range` overrides it; the default is `origin/main...HEAD`. |
+| `head` | no | The HEAD sha that the story was written against. When it differs from the built HEAD, the build warns on stderr and names both. |
+| `exclude` | no | Pathspec globs to leave out of the diff. The guide lists each glob and the files it removed. |
+
+Text between the front matter and the first heading is the summary.
+
+## Sections
+
+Every `##` heading starts a section, which runs to the next `##` or `#`.
+
+- `## Kicker · Title`: the text before ` · ` (space, U+00B7, space) is the kicker. Without ` · ` the section has no kicker.
+- A trailing `{#id}` sets the section's anchor id. The default id is the title slug; duplicate ids are an error.
+- A section has at most one `hunks` fence. The fence may appear anywhere in the section and is removed from the prose. A section without one renders without a code column.
+
+`# Appendix` (exactly that text) starts the appendix. Every `##` after it is an appendix section: full width, and a `hunks` fence there is an error. Any other `#` heading is an error.
+
+## Selectors
+
+One selector per line in a `hunks` fence. `#` starts a comment. Blank lines are ignored.
+
+```
+<path> [<hunks>] [<lines>] [again]
+```
+
+**Path.** A repo-relative path, or a suffix of one that starts after a `/` (`Station.swift` matches `Sources/Clock/Station.swift`). It must match exactly one file in the diff. Quote paths that contain spaces: `"My File.swift"`. Renamed files match on their new path.
+
+**Hunks**, at most one of:
+
+| Form | Picks |
+|---|---|
+| (none) | Every hunk of the file, or the file change for a file without hunks. |
+| `#3`, `#2-4`, `#1,3,5` | Hunks by 1-based number, as `reviewguide list` prints them. |
+| `@ "text"` | Every hunk where some line (changed or context) contains `text`. Matching nothing is an error. |
+
+**Lines**, only when the hunks part resolves to exactly one hunk:
+
+| Form | Picks |
+|---|---|
+| `lines 5-12` | Lines 5 through 12 of the hunk body, 1-based, context lines included. |
+| `@ "from" to "to"` | From the first line containing `from` through the next line at or after it that contains `to`. Replaces the hunks part: the hunk is the one containing `from`, which must be unique in the file. |
+
+**`again`** shows the code without placing it, for a section that revisits code that an earlier section already placed.
+
+Quoted strings use `\"` and `\\` as escapes.
+
+## Coverage
+
+The build places every changed line and file change that the selectors pick. It fails, listing every problem rather than the first, when:
+
+- a changed line or file change is not placed,
+- a changed line or file change is placed twice without `again`,
+- a selector matches no file, several files, or no hunk,
+- a `lines` or `to` range falls outside its hunk.
+
+Context lines may appear in several sections without `again`.
+
+## Supplementary reading
+
+- **Footnotes**: GFM `[^id]` references and `[^id]: text` definitions. The definition may sit anywhere in the story.
+- **Alerts**: `> [!NOTE]`, `> [!WARNING]` and `> [!QUESTION]`. `[!QUESTION]` marks something the author has not settled.
+- **Attachments**: a fenced block whose info string is `<language> attachment "<caption>"` embeds its content folded and highlighted. `attachment "<caption>" file=<path>` embeds a file instead, with `<path>` relative to the story file and the language taken from its extension.
