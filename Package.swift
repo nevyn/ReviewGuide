@@ -16,7 +16,7 @@ let package = Package(
             "ReviewGuideCore",
             .product(name: "cmark-gfm", package: "swift-cmark"),
             .product(name: "cmark-gfm-extensions", package: "swift-cmark"),
-        ]),
+        ], resources: [.copy("Resources")]),
         .executableTarget(name: "reviewguide", dependencies: [
             "ReviewGuideCore", "Highlight", "Render",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
