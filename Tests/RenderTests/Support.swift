@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Render
 
 /// Returns no styling at all.
@@ -46,7 +46,7 @@ func makeHunk(_ number: Int, header: String = "", _ lines: [DiffLine]) -> Hunk {
                 newStart: newStart, newCount: lines.filter { $0.kind != .del }.count, lines: lines)
 }
 
-let storyURL = URL(fileURLWithPath: "/tmp/reviewguide-tests/story.md")
+let storyURL = URL(fileURLWithPath: "/tmp/storygrafter-tests/story.md")
 
 func section(_ id: String, kicker: String? = nil, title: String? = nil, body: String = "", code: [ShownCode]? = []) -> ResolvedSection {
     ResolvedSection(

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Render
 
 /// A small Swift-ish lexer standing in for the tree-sitter highlighter.
@@ -161,7 +161,7 @@ struct SampleStyler: LineStyling {
         url: Bundle.module.url(forResource: "Fixtures", withExtension: nil)!.appendingPathComponent("story.md"))
 
     let html = try renderHTML(story, styler: SampleStyler())
-    let url = FileManager.default.temporaryDirectory.appendingPathComponent("reviewguide-sample.html")
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("storygrafter-sample.html")
     try html.write(to: url, atomically: true, encoding: .utf8)
     print("Sample review guide: \(url.path)")
     #expect(html.contains("hl-function hl-function-method"))

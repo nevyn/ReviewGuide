@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Highlight
 
 struct LanguageSample: CustomTestStringConvertible, Sendable {

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ReviewGuideCore
+@testable import StoryGrafterCore
 
 /// Builds a hunk from `" x"`, `"+x"`, `"-x"` lines, numbering old and new lines from `start`.
 private func hunk(_ number: Int, start: Int = 1, header: String = "", _ body: [String]) -> Hunk {

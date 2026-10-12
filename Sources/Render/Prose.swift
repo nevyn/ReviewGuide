@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 
 /// Renders story Markdown to HTML: GFM, alerts, highlighted code blocks, attachments and story-global footnotes.
 /// Problems are collected rather than thrown so that one render reports all of them.

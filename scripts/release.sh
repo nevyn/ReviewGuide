@@ -3,7 +3,7 @@
 #   scripts/release.sh 0.2.0   tag v0.2.0 on origin/main and push it; CI builds, releases and updates the tap
 #   scripts/release.sh redo    delete the latest release and its tag, then tag the same version on origin/main again
 set -euo pipefail
-REPO=nevyn/ReviewGuide
+REPO=nevyn/StoryGrafter
 
 die() { echo "release: $*" >&2; exit 1; }
 

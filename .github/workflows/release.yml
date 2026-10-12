@@ -1,4 +1,4 @@
-# On a v* tag: builds a universal reviewguide, publishes it as a GitHub release, and points the
+# On a v* tag: builds a universal storygrafter, publishes it as a GitHub release, and points the
 # Homebrew tap's formula at it. packaging/homebrew/README.md documents TAP_TOKEN.
 name: release
 
@@ -24,7 +24,7 @@ jobs:
       - name: Stamp the version
         run: |
           version="${GITHUB_REF_NAME#v}"
-          printf '// Written by the release workflow.\nlet reviewguideVersion = "%s"\n' "$version" > Sources/reviewguide/Version.swift
+          printf '// Written by the release workflow.\nlet storygrafterVersion = "%s"\n' "$version" > Sources/storygrafter/Version.swift
 
       - name: Test
         run: swift test
@@ -36,19 +36,19 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           swift build -c release --arch arm64 --arch x86_64
           bin="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
-          stage="reviewguide-$version"
+          stage="storygrafter-$version"
           mkdir -p "$stage/licenses"
-          cp "$bin/reviewguide" "$stage/"
+          cp "$bin/storygrafter" "$stage/"
           for b in "$bin"/*.bundle; do case "$b" in *Tests.bundle) ;; *) cp -R "$b" "$stage/" ;; esac; done
-          cp LICENSE "$stage/licenses/ReviewGuide"
+          cp LICENSE "$stage/licenses/StoryGrafter"
           find Grammars -name LICENSE | while read -r l; do
             cp "$l" "$stage/licenses/tree-sitter-$(echo "${l#Grammars/}" | sed 's|/LICENSE$||; s|/|-|g')"
           done
-          lipo -archs "$stage/reviewguide" | grep -q x86_64
-          lipo -archs "$stage/reviewguide" | grep -q arm64
-          [ "$("$stage/reviewguide" --version)" = "$version" ]
-          "$stage/reviewguide" format | grep -q '^# Story format'
-          tarball="reviewguide-$version-macos-universal.tar.gz"
+          lipo -archs "$stage/storygrafter" | grep -q x86_64
+          lipo -archs "$stage/storygrafter" | grep -q arm64
+          [ "$("$stage/storygrafter" --version)" = "$version" ]
+          "$stage/storygrafter" format | grep -q '^# Story format'
+          tarball="storygrafter-$version-macos-universal.tar.gz"
           tar -czf "$tarball" "$stage"
           {
             echo "version=$version"
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: reviewguide
+          path: storygrafter
 
       - uses: actions/checkout@v4
         with:
@@ -80,7 +80,7 @@ jobs:
           token: ${{ secrets.TAP_TOKEN }}
           path: tap
 
-      - name: Update Formula/reviewguide.rb
+      - name: Update Formula/storygrafter.rb
         env:
           TAG: ${{ github.ref_name }}
           VERSION: ${{ needs.build.outputs.version }}
@@ -88,20 +88,20 @@ jobs:
           TARBALL: ${{ needs.build.outputs.tarball }}
         run: |
           set -eu
-          url="https://github.com/nevyn/ReviewGuide/releases/download/$TAG/$TARBALL"
+          url="https://github.com/nevyn/StoryGrafter/releases/download/$TAG/$TARBALL"
           mkdir -p tap/Formula
           sed -e "s|^  url \".*\"$|  url \"$url\"|" \
               -e "s|^  sha256 \".*\"$|  sha256 \"$SHA256\"|" \
-              reviewguide/packaging/homebrew/reviewguide.rb > tap/Formula/reviewguide.rb
-          grep -qF "url \"$url\"" tap/Formula/reviewguide.rb || { echo "url line not rewritten in Formula/reviewguide.rb" >&2; exit 1; }
-          grep -qF "sha256 \"$SHA256\"" tap/Formula/reviewguide.rb || { echo "sha256 line not rewritten in Formula/reviewguide.rb" >&2; exit 1; }
+              storygrafter/packaging/homebrew/storygrafter.rb > tap/Formula/storygrafter.rb
+          grep -qF "url \"$url\"" tap/Formula/storygrafter.rb || { echo "url line not rewritten in Formula/storygrafter.rb" >&2; exit 1; }
+          grep -qF "sha256 \"$SHA256\"" tap/Formula/storygrafter.rb || { echo "sha256 line not rewritten in Formula/storygrafter.rb" >&2; exit 1; }
           cd tap
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/reviewguide.rb
+          git add Formula/storygrafter.rb
           if git diff --cached --quiet; then
-            echo "Formula/reviewguide.rb already points at $VERSION"
+            echo "Formula/storygrafter.rb already points at $VERSION"
             exit 0
           fi
-          git commit -m "reviewguide $VERSION"
+          git commit -m "storygrafter $VERSION"
           git push

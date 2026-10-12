@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 
 /// The `list --json` document from docs/cli.md. Encodes absent values as explicit `null`s.
 struct ListJSON: Encodable {

@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 import Highlight
 import Render
-import ReviewGuideCore
+import StoryGrafterCore
 
 struct CommonOptions: ParsableArguments {
     @Option(help: "The git work tree to diff.")
@@ -176,7 +176,7 @@ struct Upload: ParsableCommand {
 
 func uploadFile(_ file: URL) throws -> URL {
     guard let command = try Config.load().upload else {
-        throw UsageError("no upload command: set REVIEWGUIDE_UPLOAD or 'upload = …' in \(Config.defaultFile.path)")
+        throw UsageError("no upload command: set STORYGRAFTER_UPLOAD or 'upload = …' in \(Config.defaultFile.path)")
     }
     return try Uploader(command: command).upload(file: file)
 }
@@ -196,9 +196,9 @@ struct Format: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Prints the story format specification for this version.")
 
     func run() throws {
-        let bundle = ResourceBundle.named("ReviewGuide_reviewguide") ?? Bundle.module
+        let bundle = ResourceBundle.named("StoryGrafter_storygrafter") ?? Bundle.module
         guard let url = bundle.url(forResource: "story-format", withExtension: "md") else {
-            throw UsageError("story-format.md is missing from the reviewguide resource bundle")
+            throw UsageError("story-format.md is missing from the storygrafter resource bundle")
         }
         Console.current.out(try String(contentsOf: url, encoding: .utf8))
     }

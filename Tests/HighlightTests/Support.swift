@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Highlight
 
 /// The text and capture of every styled run, line by line, for readable expectations.

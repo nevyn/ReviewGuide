@@ -49,7 +49,7 @@ public enum FileStatus: String, Sendable, Equatable, Codable {
 }
 
 public struct Hunk: Sendable, Equatable {
-    /// 1-based position within its file, as `reviewguide list` prints it.
+    /// 1-based position within its file, as `storygrafter list` prints it.
     public var number: Int
     /// The function context git prints after `@@ … @@`, trimmed; empty when git printed none.
     public var header: String

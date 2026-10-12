@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ReviewGuideCore
+@testable import StoryGrafterCore
 
 private let url = URL(fileURLWithPath: "/tmp/story.md")
 

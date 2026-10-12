@@ -19,9 +19,9 @@ let grammarTargets: [Target] = grammars.map { suffix, path, hasScanner in
 }
 
 let package = Package(
-    name: "ReviewGuide",
+    name: "StoryGrafter",
     platforms: [.macOS(.v14)],
-    products: [.executable(name: "reviewguide", targets: ["reviewguide"])],
+    products: [.executable(name: "storygrafter", targets: ["storygrafter"])],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
         .package(url: "https://github.com/swiftlang/swift-cmark", exact: "0.9.0"),
@@ -29,21 +29,21 @@ let package = Package(
         .package(url: "https://github.com/tree-sitter/swift-tree-sitter", exact: "0.10.0"),
     ],
     targets: grammarTargets + [
-        .target(name: "ReviewGuideCore"),
+        .target(name: "StoryGrafterCore"),
         .target(name: "Highlight",
-                dependencies: ["ReviewGuideCore", .product(name: "SwiftTreeSitter", package: "swift-tree-sitter")]
+                dependencies: ["StoryGrafterCore", .product(name: "SwiftTreeSitter", package: "swift-tree-sitter")]
                     + grammars.map { .target(name: "TSGrammar\($0.0)") },
                 resources: [.copy("Resources")]),
         .target(name: "Render", dependencies: [
-            "ReviewGuideCore",
+            "StoryGrafterCore",
             .product(name: "cmark-gfm", package: "swift-cmark"),
             .product(name: "cmark-gfm-extensions", package: "swift-cmark"),
         ], resources: [.copy("Resources")]),
-        .executableTarget(name: "reviewguide", dependencies: [
-            "ReviewGuideCore", "Highlight", "Render",
+        .executableTarget(name: "storygrafter", dependencies: [
+            "StoryGrafterCore", "Highlight", "Render",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
         ], resources: [.copy("Resources/story-format.md")]),
-        .testTarget(name: "ReviewGuideCoreTests", dependencies: ["ReviewGuideCore", "reviewguide"], resources: [.copy("../Fixtures")]),
+        .testTarget(name: "StoryGrafterCoreTests", dependencies: ["StoryGrafterCore", "storygrafter"], resources: [.copy("../Fixtures")]),
         .testTarget(name: "HighlightTests", dependencies: ["Highlight"] + grammars.map { .target(name: "TSGrammar\($0.0)") }),
         .testTarget(name: "RenderTests", dependencies: ["Render"], resources: [.copy("Fixtures")]),
     ]

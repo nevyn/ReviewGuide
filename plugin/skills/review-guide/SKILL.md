@@ -1,11 +1,11 @@
 ---
 name: review-guide
-description: Write a review guide for the current branch - the story of the change, told from what this session learned while building it, placed next to every changed line - then build it with the reviewguide command and upload it. Use when the author asks for a review guide, a guided walkthrough of their change, or a story to attach to a PR/MR, typically at the end of the session that wrote the code.
+description: Write a review guide for the current branch - the story of the change, told from what this session learned while building it, placed next to every changed line - then build it with the storygrafter command and upload it. Use when the author asks for a review guide, a guided walkthrough of their change, or a story to attach to a PR/MR, typically at the end of the session that wrote the code.
 ---
 
 # review-guide
 
-A review guide tells the story of a change in sections, each next to the exact diff lines that it explains. The `reviewguide` command checks **coverage**: every changed line is placed in exactly one section, so a reader who reads the story has seen the whole change. Your job is the story; the command does the rest.
+A review guide tells the story of a change in sections, each next to the exact diff lines that it explains. The `storygrafter` command checks **coverage**: every changed line is placed in exactly one section, so a reader who reads the story has seen the whole change. Your job is the story; the command does the rest.
 
 The guide has two readers: the author, who reviews code that an agent wrote, and the colleagues who review it after them. Write for both. Its value is what this session knows and the diff does not show: why the change exists, the evidence behind it, the approaches that failed, the edge cases found, what was left alone on purpose.
 
@@ -13,19 +13,19 @@ The guide's deliverable is a file and, when an upload command is configured, a U
 
 ## 0. Preconditions
 
-- `reviewguide` is on PATH. If not, stop and tell the user: `brew install nevyn/tap/reviewguide`.
+- `storygrafter` is on PATH. If not, stop and tell the user: `brew install nevyn/tap/storygrafter`.
 - The change is committed. The guide covers `git diff <range>`, never the work tree; mention uncommitted changes if there are any.
 - The range. Default `origin/main...HEAD`; use the PR/MR target branch when the session knows it. Run `git fetch` first if the base may be stale.
-- `reviewguide format` prints the story format. Read it before writing.
+- `storygrafter format` prints the story format. Read it before writing.
 
 ## 1. Map the change
 
 ```bash
-reviewguide paths                  # where the story and the guide go
-reviewguide list --range <range>   # every file and hunk
+storygrafter paths                  # where the story and the guide go
+storygrafter list --range <range>   # every file and hunk
 ```
 
-Read every hunk. Read the surrounding code where a hunk only makes sense in context. `reviewguide list --json` gives line numbers when you need them.
+Read every hunk. Read the surrounding code where a hunk only makes sense in context. `storygrafter list --json` gives line numbers when you need them.
 
 ## 2. Gather what the session learned
 
@@ -72,7 +72,7 @@ Never smooth a doubt over with confident prose. A reader trusts the guide becaus
 ## 6. Check until it holds
 
 ```bash
-reviewguide check --range <range>
+storygrafter check --range <range>
 ```
 
 Exit 1 lists every unplaced line and every bad selector. Fix them all and re-run until it exits 0. Rules:
@@ -82,12 +82,12 @@ Exit 1 lists every unplaced line and every bad selector. Fix them all and re-run
 ## 7. Build and hand over
 
 ```bash
-reviewguide build --range <range> --upload   # when an upload command is configured
-reviewguide build --range <range>            # otherwise; prints the path
+storygrafter build --range <range> --upload   # when an upload command is configured
+storygrafter build --range <range>            # otherwise; prints the path
 ```
 
 `--format md` writes a Markdown version for readers who won't open an HTML file. Report to the caller: the guide's path, the URL when uploaded, the suspected bugs and open questions from step 5, and anything left out at the user's request.
 
 ## After every push
 
-Run `reviewguide check` again. Anchors that no longer match and new unplaced lines are listed by name; update those sections, bump `head:`, build and upload again, and hand over the new URL.
+Run `storygrafter check` again. Anchors that no longer match and new unplaced lines are listed by name; update those sections, bump `head:`, build and upload again, and hand over the new URL.

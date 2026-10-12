@@ -1,25 +1,27 @@
-# ReviewGuide
+# StoryGrafter
 
-Builds a review guide for a code change: the author's story on the left, in sections, and next to each section the exact diff lines it explains. The output is one self-contained HTML page that the author uploads and links from the merge request. The idea comes from Linear's review guides (https://linear.app/docs/diffs).
+A gardener grafts a scion onto a rootstock so that the two grow as one tree. StoryGrafter grafts the author's story onto a code change, line by line.
+
+It builds a review guide for a code change: the author's story on the left, in sections, and next to each section the exact diff lines it explains. The output is one self-contained HTML page that the author uploads and links from the merge request. The idea comes from Linear's review guides (https://linear.app/docs/diffs).
 
 The build enforces coverage: every changed line of the diff is placed in exactly one section, so a reviewer who reads the story has seen the whole change.
 
 ## Install
 
 ```sh
-brew install nevyn/tap/reviewguide
+brew install nevyn/tap/storygrafter
 ```
 
 ## Usage
 
 ```sh
-reviewguide paths                 # where the story for this branch lives
-reviewguide list                  # the diff's hunks, and where the story places each one
-reviewguide check                 # every coverage and selector problem, or ok
-reviewguide build --upload        # write the guide, upload it, print its URL
+storygrafter paths                 # where the story for this branch lives
+storygrafter list                  # the diff's hunks, and where the story places each one
+storygrafter check                 # every coverage and selector problem, or ok
+storygrafter build --upload        # write the guide, upload it, print its URL
 ```
 
-The range defaults to `origin/main...HEAD`; set `range:` in the story or pass `--range`. `reviewguide list --json` is meant for agents that draft stories. Stories are Markdown, documented in [docs/story-format.md](docs/story-format.md); `example/story.md` describes this repository's own change. All the docs are listed in [docs/index.md](docs/index.md).
+The range defaults to `origin/main...HEAD`; set `range:` in the story or pass `--range`. `storygrafter list --json` is meant for agents that draft stories. Stories are Markdown, documented in [docs/story-format.md](docs/story-format.md); `example/story.md` describes this repository's own change. All the docs are listed in [docs/index.md](docs/index.md).
 
 ## Writing a good story
 

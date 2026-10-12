@@ -1,7 +1,7 @@
 import Foundation
 import Testing
-@testable import reviewguide
-@testable import ReviewGuideCore
+@testable import storygrafter
+@testable import StoryGrafterCore
 
 private final class Captured: @unchecked Sendable {
     private let lock = NSLock()
@@ -15,7 +15,7 @@ private final class Captured: @unchecked Sendable {
 private func run(_ arguments: [String]) -> (status: Int32, stdout: String, stderr: [String]) {
     let captured = Captured()
     let console = Console(out: { captured.appendOut($0) }, err: { captured.appendErr($0) })
-    let status = Console.$current.withValue(console) { ReviewGuideCommand.run(arguments) }
+    let status = Console.$current.withValue(console) { StoryGrafterCommand.run(arguments) }
     return (status, captured.stdout, captured.stderrLines)
 }
 

@@ -1,5 +1,5 @@
 ---
-title: ReviewGuide v1
+title: StoryGrafter v1
 meta: The Python prototype becomes a Swift command line, a Homebrew formula and a Claude Code skill
 range: main...HEAD
 exclude: ["Grammars/*", "Sources/Highlight/Resources/queries/*", "Tests/Fixtures/*", "Tests/RenderTests/Fixtures/*"]
@@ -18,17 +18,17 @@ The guide is only trustworthy because of **coverage**: the build fails unless ev
 The prototype was a Python script that ran Python stories. It worked well enough on a real merge request that the reviewer asked for more. Its limits were the story format (code, selected by hunk number), no syntax highlighting, and no way to carry what the author had learned into the guide.
 
 ## Chapter 1 · The contract {#contract}
-Three targets share one model, defined before any of them was written: `ReviewGuideCore` reads git and stories and checks coverage, `Highlight` styles lines, and `Render` writes the page. The executable wires them together.
+Three targets share one model, defined before any of them was written: `StoryGrafterCore` reads git and stories and checks coverage, `Highlight` styles lines, and `Render` writes the page. The executable wires them together.
 
 The seam is small. `Diff` is what git says changed. `Story` is what the author wrote. `ResolvedStory` is the two joined: each section with the code it shows. `LineStyling` is the only thing that `Render` knows about highlighting, so the renderer tests use a stub and never parse a grammar.
 
 `StyledRun` is the one decision that shapes both highlighters and the renderer: a line's styling is a flat list of byte ranges, each with an optional syntax capture and a changed flag. Syntax and change highlighting merge into those runs before rendering, so the HTML never has to nest spans that cross each other.
 
 ```hunks
-Sources/ReviewGuideCore/Diff.swift
-Sources/ReviewGuideCore/Story.swift
-Sources/ReviewGuideCore/Resolved.swift
-Sources/ReviewGuideCore/API.swift
+Sources/StoryGrafterCore/Diff.swift
+Sources/StoryGrafterCore/Story.swift
+Sources/StoryGrafterCore/Resolved.swift
+Sources/StoryGrafterCore/API.swift
 docs/glossary.md
 docs/index.md
 ```
@@ -40,13 +40,13 @@ A story is CommonMark with three conventions: front matter, one `##` heading per
 
 Footnote ids are case-insensitive, because cmark matches them that way when it renders. The parser rejects `[^Note]` and `[^note]` in one story rather than letting one silently resolve to the other.
 
-`reviewguide format` prints this specification from the installed binary, so the skill always reads the format that the installed version accepts.
+`storygrafter format` prints this specification from the installed binary, so the skill always reads the format that the installed version accepts.
 
 ```hunks
 docs/story-format.md
-Sources/ReviewGuideCore/StoryParser.swift
-Sources/reviewguide/Resources/story-format.md
-Tests/ReviewGuideCoreTests/StoryParserTests.swift
+Sources/StoryGrafterCore/StoryParser.swift
+Sources/storygrafter/Resources/story-format.md
+Tests/StoryGrafterCoreTests/StoryParserTests.swift
 ```
 
 ## Chapter 3 · Reading git {#git}
@@ -63,15 +63,15 @@ Writing it also showed that building was slow: 14 s for this guide, nearly all o
 `Git` drains stderr on a dedicated thread. Draining it on `DispatchQueue.global()` hung the test suite once parallel tests had filled the cooperative pool: every test waited on a drain block that never got a thread.
 
 ```hunks
-Sources/ReviewGuideCore/Git.swift
-Sources/ReviewGuideCore/DiffParser.swift
-Sources/ReviewGuideCore/DiffLoader.swift
-Sources/ReviewGuideCore/BlobBatch.swift
-Tests/ReviewGuideCoreTests/DiffParserTests.swift
-Tests/ReviewGuideCoreTests/BlobBatchTests.swift
-Tests/ReviewGuideCoreTests/DiffLoaderTests.swift
-Tests/ReviewGuideCoreTests/TempRepo.swift
-Tests/ReviewGuideCoreTests/Fixtures.swift
+Sources/StoryGrafterCore/Git.swift
+Sources/StoryGrafterCore/DiffParser.swift
+Sources/StoryGrafterCore/DiffLoader.swift
+Sources/StoryGrafterCore/BlobBatch.swift
+Tests/StoryGrafterCoreTests/DiffParserTests.swift
+Tests/StoryGrafterCoreTests/BlobBatchTests.swift
+Tests/StoryGrafterCoreTests/DiffLoaderTests.swift
+Tests/StoryGrafterCoreTests/TempRepo.swift
+Tests/StoryGrafterCoreTests/Fixtures.swift
 ```
 
 ## Chapter 4 · Coverage {#coverage}
@@ -84,7 +84,7 @@ Every problem names its input: the section, the selector as written, and for an 
 ```hunks
 Resolver.swift @ "import Foundation" until "private static func pick("
 Resolver.swift @ "/// The outcome of" to end
-Tests/ReviewGuideCoreTests/ResolverTests.swift
+Tests/StoryGrafterCoreTests/ResolverTests.swift
 ```
 
 ## Chapter 5 · Anchors that survive rebases {#anchors}
@@ -96,7 +96,7 @@ The first version of line ranges failed on its first real use. A modified line a
 
 ```hunks
 Resolver.swift @ "private static func pick(" until "/// The outcome of"
-Tests/ReviewGuideCoreTests/AnchoredRangeTests.swift
+Tests/StoryGrafterCoreTests/AnchoredRangeTests.swift
 ```
 
 This guide first split `Resolver.swift` with numeric `lines`. One commit later the file had grown nine lines, and coverage reported the nine at its end as unplaced. The worse effect was silent: every range after the change pointed nine lines too early, so this section would have shown the wrong code beside its text. So ranges gained `to end`, and `until`, which stops just before the next thing so that a range can end at a closing brace that no anchor could name. Blank changed lines no longer need placement: nothing can anchor a blank line, and two anchored ranges that meet between functions would otherwise strand the blank line between them. The guide now splits `Resolver.swift` by anchors only.
@@ -167,22 +167,22 @@ Tests/RenderTests/Support.swift
 
 Stories and guides live in the repository's common git directory, `.git/review-guides/<branch>.md`. Every worktree of a clone sees the same story, a worktree's deletion doesn't take the story with it, and `git status` never shows it, so a guide that embeds code cannot be committed by accident.
 
-`ResourceBundle` exists because of Homebrew. Homebrew links `bin/reviewguide` to the real file in `libexec`, and `Bundle.module` looks for resource bundles beside the link instead of the file. `ResourceBundle` resolves the link first.
+`ResourceBundle` exists because of Homebrew. Homebrew links `bin/storygrafter` to the real file in `libexec`, and `Bundle.module` looks for resource bundles beside the link instead of the file. `ResourceBundle` resolves the link first.
 
 The upload command is the author's, configured once: `upload = upload {file}`. The tool runs it, takes the last URL that it prints, and hands that back. Publishing the URL on a PR or MR is the caller's business.
 
 ```hunks
 docs/cli.md
-Sources/reviewguide/ReviewGuideCommand.swift
-Sources/reviewguide/Commands.swift
-Sources/reviewguide/ListJSON.swift
-Sources/reviewguide/Version.swift
-Sources/ReviewGuideCore/GuidePaths.swift
-Sources/ReviewGuideCore/ResourceBundle.swift
-Sources/ReviewGuideCore/Config.swift
-Sources/ReviewGuideCore/Uploader.swift
-Tests/ReviewGuideCoreTests/CLITests.swift
-Tests/ReviewGuideCoreTests/PathsConfigUploadTests.swift
+Sources/storygrafter/StoryGrafterCommand.swift
+Sources/storygrafter/Commands.swift
+Sources/storygrafter/ListJSON.swift
+Sources/storygrafter/Version.swift
+Sources/StoryGrafterCore/GuidePaths.swift
+Sources/StoryGrafterCore/ResourceBundle.swift
+Sources/StoryGrafterCore/Config.swift
+Sources/StoryGrafterCore/Uploader.swift
+Tests/StoryGrafterCoreTests/CLITests.swift
+Tests/StoryGrafterCoreTests/PathsConfigUploadTests.swift
 ```
 
 ## Chapter 10 · The skill {#skill}
@@ -199,7 +199,7 @@ plugin/.claude-plugin/plugin.json
 ```
 
 ## Chapter 11 · Shipping {#shipping}
-A `v*` tag does everything, the way riv releases: CI stamps the version, tests, builds a universal binary, publishes the release with notes from the commits since the previous tag, and points `Formula/reviewguide.rb` in the shared tap at it. `scripts/release.sh redo` re-tags the same version when a release needs another attempt.
+A `v*` tag does everything, the way riv releases: CI stamps the version, tests, builds a universal binary, publishes the release with notes from the commits since the previous tag, and points `Formula/storygrafter.rb` in the shared tap at it. `scripts/release.sh redo` re-tags the same version when a release needs another attempt.
 
 The formula installs the binary and its resource bundles into `libexec` and links the binary into `bin`, which is the layout `ResourceBundle` resolves.
 
@@ -208,7 +208,7 @@ Package.swift
 Package.resolved
 .github/workflows/release.yml
 .github/workflows/check.yml
-packaging/homebrew/reviewguide.rb
+packaging/homebrew/storygrafter.rb
 packaging/homebrew/README.md
 scripts/release.sh
 LICENSE

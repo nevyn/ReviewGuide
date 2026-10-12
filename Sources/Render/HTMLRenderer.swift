@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 
 /// Renders a resolved story as one self-contained HTML page: no external assets, fonts or scripts.
 ///
@@ -212,7 +212,7 @@ struct Page {
 
 enum Template {
     static let html: String = {
-        let bundle = ResourceBundle.named("ReviewGuide_Render") ?? Bundle.module
+        let bundle = ResourceBundle.named("StoryGrafter_Render") ?? Bundle.module
         guard let url = bundle.url(forResource: "template", withExtension: "html", subdirectory: "Resources"),
               let text = try? String(contentsOf: url, encoding: .utf8) else {
             fatalError("Resources/template.html is missing from \(bundle.bundlePath)")

@@ -1,14 +1,14 @@
 import ArgumentParser
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 
 @main
-struct ReviewGuideCommand: ParsableCommand {
+struct StoryGrafterCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "reviewguide",
+        commandName: "storygrafter",
         abstract: "Builds a review guide: a story about a change, told next to the diff lines it explains.",
-        discussion: "Stories are Markdown; `reviewguide format` prints the specification. Exit status: 0 success, 1 the story does not satisfy the diff, 2 usage, git, IO or upload error.",
-        version: reviewguideVersion,
+        discussion: "Stories are Markdown; `storygrafter format` prints the specification. Exit status: 0 success, 1 the story does not satisfy the diff, 2 usage, git, IO or upload error.",
+        version: storygrafterVersion,
         subcommands: [List.self, Check.self, Build.self, Upload.self, Paths.self, Format.self])
 
     static func main() {
@@ -26,13 +26,13 @@ struct ReviewGuideCommand: ParsableCommand {
             for problem in problems.problems { console.err(problem.description) }
             return 1
         } catch let error as GitError {
-            console.err("reviewguide: git failed: \(error)")
+            console.err("storygrafter: git failed: \(error)")
             return 2
         } catch let error as UsageError {
-            console.err("reviewguide: \(error)")
+            console.err("storygrafter: \(error)")
             return 2
         } catch let error as UploadError {
-            console.err("reviewguide: upload failed: \(error)")
+            console.err("storygrafter: upload failed: \(error)")
             return 2
         } catch {
             let code = exitCode(for: error)

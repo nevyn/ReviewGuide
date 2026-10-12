@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 
 /// Renders a resolved story as one GFM document, with code as fenced `diff` blocks.
 ///

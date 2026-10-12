@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ReviewGuideCore
+@testable import StoryGrafterCore
 
 private func hunk(start: Int, _ body: [String]) -> Hunk {
     var old = start, new = start

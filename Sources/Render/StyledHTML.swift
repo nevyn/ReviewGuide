@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 
 enum HTML {
     /// Escapes for both text content and double-quoted attribute values.

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ReviewGuideCore
+@testable import StoryGrafterCore
 
 @Suite struct GuidePathsTests {
     @Test func branchPathsLiveInTheCommonDir() throws {
@@ -36,7 +36,7 @@ import Testing
 }
 
 @Suite struct ConfigTests {
-    let file = URL(fileURLWithPath: "/tmp/reviewguide-config")
+    let file = URL(fileURLWithPath: "/tmp/storygrafter-config")
 
     @Test func parsesUploadAndComments() throws {
         let config = try Config.parse("# comment\n\nupload = scp {file} host:/x/#frag # trailing\n", file: file)
@@ -44,29 +44,29 @@ import Testing
     }
 
     @Test func malformedLinesNameFileAndLine() {
-        #expect(throws: UsageError("/tmp/reviewguide-config:2: expected 'key = value', found 'upload'")) {
+        #expect(throws: UsageError("/tmp/storygrafter-config:2: expected 'key = value', found 'upload'")) {
             try Config.parse("\nupload\n", file: file)
         }
-        #expect(throws: UsageError("/tmp/reviewguide-config:1: unknown key 'uplaod'; the only key is 'upload'")) {
+        #expect(throws: UsageError("/tmp/storygrafter-config:1: unknown key 'uplaod'; the only key is 'upload'")) {
             try Config.parse("uplaod = x\n", file: file)
         }
     }
 
     @Test func environmentWins() throws {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ReviewGuideTests-\(UUID().uuidString)")
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("StoryGrafterTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let config = dir.appendingPathComponent("config")
         try Data("upload = from-file {file}\n".utf8).write(to: config)
         #expect(try Config.load(environment: [:], file: config).upload == "from-file {file}")
-        #expect(try Config.load(environment: ["REVIEWGUIDE_UPLOAD": "from-env {file}"], file: config).upload == "from-env {file}")
-        #expect(try Config.load(environment: ["REVIEWGUIDE_UPLOAD": ""], file: config).upload == "from-file {file}")
+        #expect(try Config.load(environment: ["STORYGRAFTER_UPLOAD": "from-env {file}"], file: config).upload == "from-env {file}")
+        #expect(try Config.load(environment: ["STORYGRAFTER_UPLOAD": ""], file: config).upload == "from-file {file}")
         #expect(try Config.load(environment: [:], file: dir.appendingPathComponent("absent")).upload == nil)
     }
 }
 
 @Suite struct UploaderTests {
     func guide() throws -> URL {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("ReviewGuideTests-\(UUID().uuidString)")
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("StoryGrafterTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let file = dir.appendingPathComponent("it's a guide.html")
         try Data("<p>x</p>".utf8).write(to: file)

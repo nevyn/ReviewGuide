@@ -133,7 +133,7 @@ footer { padding:16px 32px 32px; color:var(--muted); font-size:12px; }
   }
   var boxes = document.querySelectorAll("input.reviewed");
   for (var i = 0; i < boxes.length; i++) (function (box) {
-    var key = "reviewguide:" + head + ":" + box.getAttribute("data-section");
+    var key = "storygrafter:" + head + ":" + box.getAttribute("data-section");
     try { box.checked = localStorage.getItem(key) === "1"; } catch (e) {}
     mark(box);
     box.addEventListener("change", function () {

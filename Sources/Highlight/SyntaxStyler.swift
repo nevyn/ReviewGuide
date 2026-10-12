@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 import SwiftTreeSitter
 
 /// Whole-file syntax styling: parse, run the highlight query, flatten captures, split into lines.
@@ -177,7 +177,7 @@ enum HighlightError: Error, CustomStringConvertible {
         case .notUTF8: "not UTF-8"
         case .incompatibleGrammar(let language): "the \(language) grammar's ABI does not match the tree-sitter runtime"
         case .parseTimedOut(let language): "the \(language) parse took over \(Int(SyntaxStyler.parseTimeout)) s"
-        case .queryMissing(let language): "Resources/queries/\(language).scm is missing from the ReviewGuide_Highlight bundle"
+        case .queryMissing(let language): "Resources/queries/\(language).scm is missing from the StoryGrafter_Highlight bundle"
         case .queryInvalid(let language, let error): "Resources/queries/\(language).scm does not compile: \(error)"
         }
     }
@@ -196,7 +196,7 @@ final class QueryCache: @unchecked Sendable {
     private let lock = NSLock()
     private var queries: [GrammarLanguage: Result<Query, HighlightError>] = [:]
 
-    static var bundle: Bundle { ResourceBundle.named("ReviewGuide_Highlight") ?? Bundle.module }
+    static var bundle: Bundle { ResourceBundle.named("StoryGrafter_Highlight") ?? Bundle.module }
 
     func query(for language: GrammarLanguage) throws(HighlightError) -> Query {
         lock.lock()

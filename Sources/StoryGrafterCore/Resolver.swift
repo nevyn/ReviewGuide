@@ -10,7 +10,7 @@ public enum Resolver {
         return resolution.resolved
     }
 
-    /// Resolves what it can and reports the rest, without throwing: `reviewguide list` shows placements
+    /// Resolves what it can and reports the rest, without throwing: `storygrafter list` shows placements
     /// of a story that does not yet cover its diff. A selector with a problem contributes no code.
     public static func analyze(_ story: Story, against diff: Diff) -> Resolution {
         var placements = Placements()
@@ -236,7 +236,7 @@ public struct Placements: Sendable, Equatable {
 }
 
 extension DiffFile {
-    /// How the file changed, as `reviewguide list` and unplaced problems print it: `renamed from Old.swift`,
+    /// How the file changed, as `storygrafter list` and unplaced problems print it: `renamed from Old.swift`,
     /// `binary`, `mode change`, `added`, `deleted`, `copied from x`, `modified`.
     public var changeSummary: String {
         switch status {

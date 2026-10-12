@@ -1,5 +1,5 @@
 import Testing
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Render
 
 @Test func escapesMarkup() {

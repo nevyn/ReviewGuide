@@ -1,5 +1,5 @@
 import Foundation
-@testable import ReviewGuideCore
+@testable import StoryGrafterCore
 
 /// A throwaway repository under the temporary directory. Never cleaned up; nothing outside it is touched.
 struct TempRepo {
@@ -7,7 +7,7 @@ struct TempRepo {
     let git: Git
 
     init() throws {
-        url = FileManager.default.temporaryDirectory.appendingPathComponent("ReviewGuideTests-\(UUID().uuidString)")
+        url = FileManager.default.temporaryDirectory.appendingPathComponent("StoryGrafterTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         git = Git(repo: url)
         _ = try git.run(["init", "-q", "-b", "main"])

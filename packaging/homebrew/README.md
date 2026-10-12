@@ -1,8 +1,8 @@
 # Homebrew formula
 
-`reviewguide.rb` is the source of the formula that `brew install nevyn/tap/reviewguide` installs. The tap, [nevyn/homebrew-tap](https://github.com/nevyn/homebrew-tap), holds a generated copy at `Formula/reviewguide.rb`; edit this file, never the tap's copy, because every release overwrites it. Its `url` and `sha256` are placeholders that the release workflow rewrites.
+`storygrafter.rb` is the source of the formula that `brew install nevyn/tap/storygrafter` installs. The tap, [nevyn/homebrew-tap](https://github.com/nevyn/homebrew-tap), holds a generated copy at `Formula/storygrafter.rb`; edit this file, never the tap's copy, because every release overwrites it. Its `url` and `sha256` are placeholders that the release workflow rewrites.
 
-The formula installs the universal `reviewguide` binary and its resource bundles into `libexec` and links the binary into `bin`.
+The formula installs the universal `storygrafter` binary and its resource bundles into `libexec` and links the binary into `bin`.
 
 ## Releasing
 

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Highlight
 
 private func del(_ text: String) -> DiffLine { DiffLine(kind: .del, old: 1, new: nil, text: text) }

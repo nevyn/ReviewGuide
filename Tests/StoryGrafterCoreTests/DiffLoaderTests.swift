@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ReviewGuideCore
+@testable import StoryGrafterCore
 
 @Suite struct DiffLoaderTests {
     @Test func mergeBaseRangeWithExclusion() throws {

@@ -1,5 +1,5 @@
 import Foundation
-import ReviewGuideCore
+import StoryGrafterCore
 
 /// Tree-sitter syntax styling plus change styling within paired lines, per docs/architecture.md.
 ///
@@ -144,7 +144,7 @@ final class FileCache: @unchecked Sendable {
     }
 
     static func warn(_ message: String) {
-        FileHandle.standardError.write(Data("reviewguide: warning: \(message); left unstyled\n".utf8))
+        FileHandle.standardError.write(Data("storygrafter: warning: \(message); left unstyled\n".utf8))
     }
 }
 

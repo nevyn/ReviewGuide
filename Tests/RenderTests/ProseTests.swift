@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Render
 
 private func prose(_ footnotes: [String: String] = [:], url: URL = storyURL, styler: any LineStyling = PlainStyler()) -> Prose {

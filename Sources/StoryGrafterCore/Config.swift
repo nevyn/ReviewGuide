@@ -7,12 +7,12 @@ public struct Config: Sendable, Equatable {
 
     public init(upload: String? = nil) { self.upload = upload }
 
-    /// `~/.config/reviewguide/config`.
+    /// `~/.config/storygrafter/config`.
     public static var defaultFile: URL {
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/reviewguide/config")
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config/storygrafter/config")
     }
 
-    /// Reads `file` when it exists, then lets a non-empty `REVIEWGUIDE_UPLOAD` in `environment` override `upload`.
+    /// Reads `file` when it exists, then lets a non-empty `STORYGRAFTER_UPLOAD` in `environment` override `upload`.
     /// - Throws: `UsageError` naming the file and line for a malformed config file, or when it exists but cannot be read.
     public static func load(environment: [String: String] = ProcessInfo.processInfo.environment,
                             file: URL = Config.defaultFile) throws -> Config {
@@ -23,7 +23,7 @@ public struct Config: Sendable, Equatable {
             catch { throw UsageError("cannot read \(file.path): \(error.localizedDescription)") }
             config = try parse(text, file: file)
         }
-        if let upload = environment["REVIEWGUIDE_UPLOAD"], !upload.trimmingCharacters(in: .whitespaces).isEmpty {
+        if let upload = environment["STORYGRAFTER_UPLOAD"], !upload.trimmingCharacters(in: .whitespaces).isEmpty {
             config.upload = upload
         }
         return config

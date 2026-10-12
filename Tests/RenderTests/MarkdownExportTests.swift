@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Render
 
 private let file = DiffFile(path: "Sources/A.swift", status: .modified, hunks: [

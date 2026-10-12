@@ -1,17 +1,17 @@
 # Architecture
 
-One SwiftPM package. The `reviewguide` executable and its resource bundle are the whole install; Homebrew puts both in `libexec` and links the executable into `bin`.
+One SwiftPM package. The `storygrafter` executable and its resource bundle are the whole install; Homebrew puts both in `libexec` and links the executable into `bin`.
 
 | Target | Owns |
 |---|---|
-| `ReviewGuideCore` | The diff model, running git, parsing `git diff`, the story model and parser, resolving selectors, coverage, configuration and upload. No rendering. |
+| `StoryGrafterCore` | The diff model, running git, parsing `git diff`, the story model and parser, resolving selectors, coverage, configuration and upload. No rendering. |
 | `Highlight` | Syntax highlighting with tree-sitter and change highlighting within lines. Produces styled runs per line. |
 | `Render` | The HTML page and the Markdown export, from a resolved story plus styled lines. Owns the page template and CSS. |
-| `reviewguide` | The command line. Wires the three together. |
+| `storygrafter` | The command line. Wires the three together. |
 
 ## Pipeline
 
-1. `ReviewGuideCore` runs `git diff --find-renames --no-color --no-ext-diff <range> -- . <exclusions>` and parses it into `DiffFile`s.
+1. `StoryGrafterCore` runs `git diff --find-renames --no-color --no-ext-diff <range> -- . <exclusions>` and parses it into `DiffFile`s.
 2. It parses the story into `Story`, resolves each selector to `Placement`s, and checks coverage.
 3. `Highlight` styles every line that a section shows (see below).
 4. `Render` lays out the sections and writes one self-contained file.

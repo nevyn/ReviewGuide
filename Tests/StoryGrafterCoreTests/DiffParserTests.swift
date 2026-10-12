@@ -1,5 +1,5 @@
 import Testing
-@testable import ReviewGuideCore
+@testable import StoryGrafterCore
 
 @Suite struct DiffParserTests {
     @Test func added() throws {

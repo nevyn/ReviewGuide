@@ -1,4 +1,4 @@
-import ReviewGuideCore
+import StoryGrafterCore
 
 /// Change styling: pairs the deleted and added lines of each replacement in a hunk and marks the tokens that differ.
 enum ChangeStyler {

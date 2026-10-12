@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import ReviewGuideCore
+import StoryGrafterCore
 @testable import Render
 
 private let station = DiffFile(path: "Sources/Clock/Station<&>.swift", status: .modified, hunks: [
@@ -120,7 +120,7 @@ func fileChangeCards(file: DiffFile, text: String, badge: String) throws {
                                        appendix: [Section(id: "c", title: "C", body: "", line: 1)]))
     #expect(html.count(of: "<input type=\"checkbox\" class=\"reviewed\"") == 3)
     #expect(html.contains("data-section=\"b\" title=\"Reviewed\""))
-    #expect(html.contains("\"reviewguide:\" + head + \":\""))
+    #expect(html.contains("\"storygrafter:\" + head + \":\""))
 }
 
 @Test func footnotesAcrossSummarySectionsAndAppendix() throws {
@@ -145,7 +145,7 @@ func fileChangeCards(file: DiffFile, text: String, badge: String) throws {
         guard let problems = error as? StoryProblems else { return false }
         return problems.problems.map(\.description) == [
             "summary: footnote [^nope] is not defined",
-            "one: attachment \"Log\": file=missing.log not found at /tmp/reviewguide-tests/missing.log",
+            "one: attachment \"Log\": file=missing.log not found at /tmp/storygrafter-tests/missing.log",
             "one: footnote [^gone] is not defined",
         ]
     }

@@ -79,7 +79,7 @@ One selector per line in a `hunks` fence. `#` starts a comment. Blank lines are 
 | Form | Picks |
 |---|---|
 | (none) | Every hunk of the file, or the file change for a file without hunks. |
-| `#3`, `#2-4`, `#1,3,5` | Hunks by 1-based number, as `reviewguide list` prints them. |
+| `#3`, `#2-4`, `#1,3,5` | Hunks by 1-based number, as `storygrafter list` prints them. |
 | `@ "text"` | Every hunk where some line (changed or context) contains `text`. Matching nothing is an error. |
 
 **Lines**, only when the hunks part resolves to exactly one hunk:
