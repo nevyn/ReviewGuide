@@ -1,0 +1,14 @@
+diff --git a/blank.txt b/blank.txt
+index 8463c39f..d7164d2a 100644
+--- a/blank.txt
++++ b/blank.txt
+@@ -1,8 +1,7 @@
+ class A {
+
+     func f() {
+-        old()
++        new()
+     }
+
+--- sql comment
+ }

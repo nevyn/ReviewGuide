@@ -1,0 +1,15 @@
+diff --git a/My File.swift b/My File.swift
+index 814f4a42..879de50b 100644
+--- a/My File.swift	
++++ b/My File.swift	
+@@ -1,2 +1,2 @@
+ one
+-two
++TWO
+diff --git "a/quo\"te \303\274.txt" "b/quo\"te \303\274.txt"
+index 587be6b4..975fbec8 100644
+--- "a/quo\"te \303\274.txt"	
++++ "b/quo\"te \303\274.txt"	
+@@ -1 +1 @@
+-x
++y
