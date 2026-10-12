@@ -27,18 +27,24 @@ public struct Highlighter: LineStyling {
     }
 
     /// One `StyledLine` per entry of `hunk.lines`. Deleted lines take syntax from the old blob at `DiffLine.old`,
-    /// added and context lines from the new blob at `DiffLine.new`. A line whose text differs from the blob's
-    /// line (a blob that does not match the diff) is left unstyled.
+    /// added and context lines from the new blob at `DiffLine.new`; a line whose text differs from its blob line
+    /// (a blob that does not match the diff) gets no syntax. In each replacement (deleted lines directly followed
+    /// by added lines), similar lines are paired in order and their differing tokens marked `changed`.
     public func styles(for file: DiffFile, hunk: Hunk) -> [StyledLine] {
-        hunk.lines.map { line in
-            let side: FileCache.Side = line.kind == .del
-                ? .init(rev: diff.base, path: file.oldPath ?? file.path, exists: file.status != .added)
-                : .init(rev: diff.head, path: file.path, exists: file.status != .deleted)
-            guard let number = line.kind == .del ? line.old : line.new,
-                  let blobLines = cache.lines(for: side), number >= 1, number <= blobLines.count
-            else { return Self.unstyled(line.text) }
-            return Self.fit(blobLines[number - 1], text: line.text, blobText: cache.text(for: side, line: number))
+        let changed = ChangeStyler.changedRanges(in: hunk.lines)
+        return hunk.lines.enumerated().map { index, line in
+            ChangeStyler.merge(syntax(for: line, in: file), changed: changed[index] ?? [])
         }
+    }
+
+    private func syntax(for line: DiffLine, in file: DiffFile) -> StyledLine {
+        let side: FileCache.Side = line.kind == .del
+            ? .init(rev: diff.base, path: file.oldPath ?? file.path, exists: file.status != .added)
+            : .init(rev: diff.head, path: file.path, exists: file.status != .deleted)
+        guard let number = line.kind == .del ? line.old : line.new,
+              let blobLines = cache.lines(for: side), number >= 1, number <= blobLines.count
+        else { return Self.unstyled(line.text) }
+        return Self.fit(blobLines[number - 1], text: line.text, blobText: cache.text(for: side, line: number))
     }
 
     /// Syntax styling for a standalone snippet, one entry per `\n`-separated line. `language` is a Markdown
