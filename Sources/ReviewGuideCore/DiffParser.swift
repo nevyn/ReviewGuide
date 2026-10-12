@@ -29,9 +29,9 @@ public enum DiffParser {
             var line = String(decoding: raw, as: UTF8.self)
             if line.hasSuffix("\r") { line.removeLast() }
 
-            if var h = hunk, h.remainingOld > 0 || h.remainingNew > 0 {
-                h.consume(line)
-                hunk = h
+            // Mutate in place: a bound copy of `hunk` would share `lines` and force a copy on every append.
+            if hunk?.isOpen == true {
+                hunk!.consume(line)
                 continue
             }
             if line.hasPrefix("\\") { continue }  // "\ No newline at end of file" after the last body line
@@ -155,6 +155,8 @@ private struct HunkBuilder {
         remainingOld = oldCount; remainingNew = newCount
         nextOld = oldStart; nextNew = newStart
     }
+
+    var isOpen: Bool { remainingOld > 0 || remainingNew > 0 }
 
     mutating func consume(_ line: String) {
         let text = line.isEmpty ? "" : String(line.dropFirst())

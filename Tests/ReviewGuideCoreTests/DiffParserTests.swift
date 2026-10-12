@@ -119,4 +119,14 @@ import Testing
         let f = DiffParser.parse(text).first
         #expect(f?.path == "my b/pic.png" && f?.status == .binary)
     }
+
+    @Test(.timeLimit(.minutes(1))) func largeHunkParsesInLinearTime() {
+        let count = 300_000
+        var text = "diff --git a/big.c b/big.c\nnew file mode 100644\n--- /dev/null\n+++ b/big.c\n@@ -0,0 +1,\(count) @@\n"
+        text += String(repeating: "+int x;\n", count: count)
+        let start = ContinuousClock.now
+        let files = DiffParser.parse(text)
+        #expect(files.first?.hunks.first?.lines.count == count)
+        #expect(ContinuousClock.now - start < .seconds(10))
+    }
 }
