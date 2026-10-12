@@ -86,7 +86,9 @@ One selector per line in a `hunks` fence. `#` starts a comment. Blank lines are 
 | Form | Picks |
 |---|---|
 | `lines 5-12` | Lines 5 through 12 of the hunk body, 1-based, context lines included. |
-| `@ "from" to "to"` | From the first line containing `from` through the next line at or after it that contains `to`. Replaces the hunks part: the hunk is the one containing `from`, which must be unique in the file. |
+| `@ "from" to "to"` | From the line containing `from` through the first line at or after it, in the same hunk, that contains `to`. Replaces the hunks part: `from` must be on exactly one line of the file. |
+
+An anchored range reads like the new file: `from` and `to` match context and added lines, and match deleted lines only when no such line contains the text. Deleted lines travel with the line after them (with the line before them when they end the hunk), so a range never splits a replacement between its old and new side.
 
 **`again`** shows the code without placing it, for a section that revisits code that an earlier section already placed.
 

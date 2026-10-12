@@ -95,21 +95,7 @@ public enum Resolver {
         }
 
         if case .anchored(let from, let to) = selector.lines {
-            var hits: [(Hunk, Int)] = []
-            for hunk in file.hunks {
-                for (i, line) in hunk.lines.enumerated() where line.text.contains(from) { hits.append((hunk, i)) }
-            }
-            guard let (hunk, start) = hits.first else {
-                return .failure("no line of '\(file.path)' contains \"\(from)\"")
-            }
-            guard hits.count == 1 else {
-                let places = hits.map { "#\($0.0.number) line \($0.1 + 1)" }.joined(separator: ", ")
-                return .failure("\"\(from)\" is on \(hits.count) lines of '\(file.path)' (\(places)); it must be unique")
-            }
-            guard let end = hunk.lines[start...].firstIndex(where: { $0.text.contains(to) }) else {
-                return .failure("no line from \"\(from)\" to the end of '\(file.path)' #\(hunk.number) contains \"\(to)\"")
-            }
-            return .success(.hunks(file, [(hunk, start..<(end + 1))]))
+            return anchoredRange(file: file, from: from, to: to)
         }
 
         let hunks: [Hunk]
@@ -137,6 +123,46 @@ public enum Resolver {
             return .success(.hunks(file, [(hunk, (a - 1)..<b)]))
         }
         return .success(.hunks(file, hunks.map { ($0, 0..<$0.lines.count) }))
+    }
+
+    /// Resolves `@ "from" to "to"`. Anchors match the new side (context and added lines), and deleted lines only
+    /// when the text is on no new-side line. Deleted lines travel with the line after them, or with the line before
+    /// them when they end the hunk, so the range never splits a replacement.
+    private static func anchoredRange(file: DiffFile, from: String, to: String) -> Outcome<Pick> {
+        func describe(_ hunk: Hunk, _ i: Int) -> String {
+            let line = hunk.lines[i]
+            return "#\(hunk.number) \(line.old.map(String.init) ?? "-")/\(line.new.map(String.init) ?? "-")"
+        }
+        var newSide: [(Hunk, Int)] = [], oldSide: [(Hunk, Int)] = []
+        for hunk in file.hunks {
+            for (i, line) in hunk.lines.enumerated() where line.text.contains(from) {
+                if line.kind == .del { oldSide.append((hunk, i)) } else { newSide.append((hunk, i)) }
+            }
+        }
+        let hits = newSide.isEmpty ? oldSide : newSide
+        guard let (hunk, start) = hits.first else {
+            return .failure("no line of '\(file.path)' contains \"\(from)\"")
+        }
+        guard hits.count == 1 else {
+            let side = newSide.isEmpty ? "deleted lines" : "lines of the new side"
+            let places = hits.map { describe($0.0, $0.1) }.joined(separator: ", ")
+            return .failure("\"\(from)\" is on \(hits.count) \(side) of '\(file.path)' (\(places)); it must be unique")
+        }
+
+        let rest = hunk.lines.indices[start...]
+        let newEnd = rest.first { hunk.lines[$0].kind != .del && hunk.lines[$0].text.contains(to) }
+        guard let end = newEnd ?? rest.first(where: { hunk.lines[$0].text.contains(to) }) else {
+            return .failure("no line from \"\(from)\" (\(describe(hunk, start))) to the end of '\(file.path)' #\(hunk.number) contains \"\(to)\"")
+        }
+
+        var lower = start, upper = end
+        if hunk.lines[start].kind != .del {
+            while lower > 0, hunk.lines[lower - 1].kind == .del { lower -= 1 }
+        }
+        if hunk.lines[end].kind != .del, hunk.lines[(end + 1)...].allSatisfy({ $0.kind == .del }) {
+            upper = hunk.lines.count - 1
+        }
+        return .success(.hunks(file, [(hunk, lower..<(upper + 1))]))
     }
 
     private static func match(_ path: String, in diff: Diff) -> Outcome<DiffFile> {

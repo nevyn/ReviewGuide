@@ -119,9 +119,9 @@ private let everything = ["Station.swift", "Drift.swift", "\"Docs/New Name.md\""
         ("Clock/Station.swift @ \"nothing\"", "no hunk of 'Sources/Clock/Station.swift' contains \"nothing\""),
         ("Station.swift lines 1-2", "'lines' needs exactly one hunk, but the selector picks 3"),
         ("Station.swift #2 lines 3-9", "lines 3-9 fall outside 'Sources/Clock/Station.swift' #2, which has 4 lines"),
-        ("Station.swift @ \"skew\" to \"}\"", "\"skew\" is on 2 lines of 'Sources/Clock/Station.swift' (#2 line 2, #2 line 3); it must be unique"),
+        ("Station.swift @ \"skew\" to \"}\"", "\"skew\" is on 2 lines of the new side of 'Sources/Clock/Station.swift' (#2 -/41, #2 -/42); it must be unique"),
         ("Station.swift @ \"absent\" to \"}\"", "no line of 'Sources/Clock/Station.swift' contains \"absent\""),
-        ("Station.swift @ \"apply(\" to \"tail\"", "no line from \"apply(\" to the end of 'Sources/Clock/Station.swift' #2 contains \"tail\""),
+        ("Station.swift @ \"apply(\" to \"tail\"", "no line from \"apply(\" (#2 -/42) to the end of 'Sources/Clock/Station.swift' #2 contains \"tail\""),
         ("\"New Name.md\" #1", "'Docs/New Name.md' is a file change without hunks (renamed from Docs/Old.md); select it by path alone"),
         ("Old.md", "matches no file in the diff"),
     ])
