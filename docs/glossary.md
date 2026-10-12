@@ -26,4 +26,6 @@
 
 **Exclusion** — A pathspec glob, declared in the story's front matter, that removes files from the diff. The guide lists every exclusion and the files it removed.
 
+**Replacement** — A run of deleted lines directly followed by a run of added lines in one hunk. Change highlighting pairs lines only within a replacement.
+
 **Upload command** — The author's configured shell command that publishes a file and prints its URL.

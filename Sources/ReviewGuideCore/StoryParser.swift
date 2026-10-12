@@ -152,10 +152,10 @@ private struct Parser {
             }
 
             if let (id, first) = Self.footnoteDefinition(line.text) {
-                if let previous = footnoteLines[id] {
-                    problem(line.number, "footnote [^\(id)] is defined twice (also line \(previous))")
+                if let previous = footnoteLines[id.lowercased()] {
+                    problem(line.number, "footnote [^\(id)] is defined twice (also line \(previous)); ids are case-insensitive")
                 }
-                footnoteLines[id] = line.number
+                footnoteLines[id.lowercased()] = line.number
                 footnote = (id, line.number, [first], 0)
                 continue
             }

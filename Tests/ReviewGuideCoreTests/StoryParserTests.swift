@@ -147,7 +147,8 @@ private func story(_ body: String) throws -> Story {
         ("---\ntitle: T\n---\n# Appendix\n## A\n```hunks\nx\n```\n", "line 6: appendix sections place no code, so they cannot have a hunks fence"),
         ("---\ntitle: T\n---\n```hunks\nx\n```\n", "line 4: hunks fence before the first section"),
         ("---\ntitle: T\n---\n## A\n```swift\n", "line 5: code fence ``` is never closed"),
-        ("---\ntitle: T\n---\n[^a]: x\n[^a]: y\n", "line 5: footnote [^a] is defined twice (also line 4)"),
+        ("---\ntitle: T\n---\n[^a]: x\n[^a]: y\n", "line 5: footnote [^a] is defined twice (also line 4); ids are case-insensitive"),
+        ("---\ntitle: T\n---\n[^Note]: x\n[^note]: y\n", "line 5: footnote [^note] is defined twice (also line 4); ids are case-insensitive"),
     ])
     func syntaxProblem(text: String, expected: String) {
         #expect(problems(text) == [expected])
