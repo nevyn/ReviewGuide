@@ -25,6 +25,7 @@ Sources/Clock/Drift.swift
 Station.swift @ "func resync("
 Station.swift #3 lines 1-12
 Station.swift @ "let skew" to "}"
+Station.swift @ "func drift(" to end
 Sources/Clock/Station.swift #1 again
 ```
 
@@ -87,6 +88,7 @@ One selector per line in a `hunks` fence. `#` starts a comment. Blank lines are 
 |---|---|
 | `lines 5-12` | Lines 5 through 12 of the hunk body, 1-based, context lines included. |
 | `@ "from" to "to"` | From the line containing `from` through the first line at or after it, in the same hunk, that contains `to`. Replaces the hunks part: `from` must be on exactly one line of the file. |
+| `@ "from" to end` | From the line containing `from` through the end of its hunk. |
 
 An anchored range reads like the new file: `from` and `to` match context and added lines, and match deleted lines only when no such line contains the text. Deleted lines travel with the line after them (with the line before them when they end the hunk), so a range never splits a replacement between its old and new side.
 
@@ -103,7 +105,7 @@ The build places every changed line and file change that the selectors pick. It 
 - a selector matches no file, several files, or no hunk,
 - a `lines` or `to` range falls outside its hunk.
 
-Context lines may appear in several sections without `again`.
+Context lines may appear in several sections without `again`. Blank changed lines (empty or whitespace only) are shown wherever a range includes them but need no placement, because no anchor can name one.
 
 ## Supplementary reading
 

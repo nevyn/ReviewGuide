@@ -159,7 +159,7 @@ private func story(_ body: String) throws -> Story {
         ("x.swift #3-2", "'#3-2' is not a hunk list like #3, #2-4 or #1,3,5"),
         ("x.swift @ nope", "'@' must be followed by a quoted anchor, like @ \"func resync(\""),
         ("x.swift @ \"\"", "the anchor is empty"),
-        ("x.swift @ \"a\" to", "'to' must be followed by a quoted anchor"),
+        ("x.swift @ \"a\" to", "'to' must be followed by a quoted anchor or 'end'"),
         ("x.swift @ \"a\" to \"b\" lines 1-2", "a selector has either 'lines' or '@ … to …', not both"),
         ("x.swift lines 3-1", "'lines' must be followed by a range like 5-12"),
         ("x.swift again #1", "unexpected '#1'; the form is <path> [#n | @ \"text\"] [lines a-b | to \"text\"] [again]"),

@@ -16,7 +16,7 @@
 
 **Anchor** — A quoted search string in a selector (`@ "func resync("`) that picks hunks by content, so that the selector survives rebases.
 
-**Changed line** — A `+` or `-` line in the diff. The unit of coverage. Context lines are not changed lines.
+**Changed line** — A `+` or `-` line in the diff. The unit of coverage, except for blank ones. Context lines are not changed lines.
 
 **File change** — A change without hunks: a binary file, a pure rename, a mode change. Placed by selecting its path; counts toward coverage like a changed line.
 

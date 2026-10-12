@@ -82,6 +82,9 @@ public struct DiffLine: Sendable, Equatable {
 
     /// Added and deleted lines count toward coverage; context lines do not.
     public var isChange: Bool { kind != .context }
+
+    /// Empty or whitespace only. Blank changed lines are shown when a range includes them but need no placement.
+    public var isBlank: Bool { text.allSatisfy(\.isWhitespace) }
 }
 
 public enum LineKind: String, Sendable, Equatable, Codable {

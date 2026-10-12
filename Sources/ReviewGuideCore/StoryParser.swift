@@ -410,11 +410,15 @@ private struct Parser {
             if anchor.isEmpty { return fail("the anchor is empty") }
             i += 2
             if i < tokens.count, tokens[i] == .word("to") {
-                guard i + 1 < tokens.count, case .quoted(let to) = tokens[i + 1] else {
-                    return fail("'to' must be followed by a quoted anchor")
+                if i + 1 < tokens.count, tokens[i + 1] == .word("end") {
+                    lines = .anchored(from: anchor, to: nil)
+                } else {
+                    guard i + 1 < tokens.count, case .quoted(let to) = tokens[i + 1] else {
+                        return fail("'to' must be followed by a quoted anchor or 'end'")
+                    }
+                    if to.isEmpty { return fail("the 'to' anchor is empty") }
+                    lines = .anchored(from: anchor, to: to)
                 }
-                if to.isEmpty { return fail("the 'to' anchor is empty") }
-                lines = .anchored(from: anchor, to: to)
                 i += 2
             } else {
                 hunks = .anchor(anchor)

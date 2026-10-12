@@ -61,10 +61,10 @@ public enum Resolver {
                 continue
             }
             for hunk in file.hunks {
-                let unplaced = hunk.lines.indices.filter {
-                    hunk.lines[$0].isChange && placements.lines[.init(path: file.path, hunk: hunk.number, index: $0)] == nil
-                }
-                if unplaced.count > 3, unplaced.count == hunk.lines.filter(\.isChange).count {
+                // Blank lines need no placement: no anchor can name one, so ranges that meet between two functions would strand it.
+                let required = hunk.lines.indices.filter { hunk.lines[$0].isChange && !hunk.lines[$0].isBlank }
+                let unplaced = required.filter { placements.lines[.init(path: file.path, hunk: hunk.number, index: $0)] == nil }
+                if unplaced.count > 3, unplaced.count == required.count {
                     let added = unplaced.filter { hunk.lines[$0].kind == .add }.count
                     problems.append(StoryProblem(
                         message: "unplaced: \(file.path) #\(hunk.number) (all of it: +\(added) -\(unplaced.count - added))"))
@@ -134,10 +134,10 @@ public enum Resolver {
         return .success(.hunks(file, hunks.map { ($0, 0..<$0.lines.count) }))
     }
 
-    /// Resolves `@ "from" to "to"`. Anchors match the new side (context and added lines), and deleted lines only
+    /// Resolves `@ "from" to "to"` and `@ "from" to end`. Anchors match the new side (context and added lines), and deleted lines only
     /// when the text is on no new-side line. Deleted lines travel with the line after them, or with the line before
     /// them when they end the hunk, so the range never splits a replacement.
-    private static func anchoredRange(file: DiffFile, from: String, to: String) -> Outcome<Pick> {
+    private static func anchoredRange(file: DiffFile, from: String, to: String?) -> Outcome<Pick> {
         func describe(_ hunk: Hunk, _ i: Int) -> String {
             let line = hunk.lines[i]
             return "#\(hunk.number) \(line.old.map(String.init) ?? "-")/\(line.new.map(String.init) ?? "-")"
@@ -158,10 +158,16 @@ public enum Resolver {
             return .failure("\"\(from)\" is on \(hits.count) \(side) of '\(file.path)' (\(places)); it must be unique")
         }
 
-        let rest = hunk.lines.indices[start...]
-        let newEnd = rest.first { hunk.lines[$0].kind != .del && hunk.lines[$0].text.contains(to) }
-        guard let end = newEnd ?? rest.first(where: { hunk.lines[$0].text.contains(to) }) else {
-            return .failure("no line from \"\(from)\" (\(describe(hunk, start))) to the end of '\(file.path)' #\(hunk.number) contains \"\(to)\"")
+        let end: Int
+        if let to {
+            let rest = hunk.lines.indices[start...]
+            let newEnd = rest.first { hunk.lines[$0].kind != .del && hunk.lines[$0].text.contains(to) }
+            guard let found = newEnd ?? rest.first(where: { hunk.lines[$0].text.contains(to) }) else {
+                return .failure("no line from \"\(from)\" (\(describe(hunk, start))) to the end of '\(file.path)' #\(hunk.number) contains \"\(to)\"")
+            }
+            end = found
+        } else {
+            end = hunk.lines.count - 1
         }
 
         var lower = start, upper = end

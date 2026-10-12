@@ -82,8 +82,8 @@ Placement is keyed by path, hunk number and line index. Context lines never coun
 Every problem names its input: the section, the selector as written, and for an unplaced line its path, hunk, old and new line numbers and text. `check` prints all of them, so one run tells the author everything that is missing. A hunk with more than three changed lines and none of them placed is reported as one line, so a forgotten new file doesn't bury the rest of the list.
 
 ```hunks
-Sources/ReviewGuideCore/Resolver.swift lines 1-130
-Sources/ReviewGuideCore/Resolver.swift lines 168-224
+Resolver.swift @ "public enum Resolver" to "private enum Outcome"
+Resolver.swift @ "private static func match(" to end
 Tests/ReviewGuideCoreTests/ResolverTests.swift
 ```
 
@@ -92,15 +92,14 @@ The prototype selected hunks by number. After a rebase, hunk 3 can be a differen
 
 The first version of line ranges failed on its first real use. A modified line appears twice in a diff, as the old `-` line and the new `+` line, so the anchor that an author naturally writes, the line they changed, matched two lines.
 
-Ranges now read like the new file. Anchors match context and added lines, and fall back to deleted lines only when the text exists nowhere else, as in a pure deletion. Deleted lines travel with the line after them, so a range never splits a replacement between its old and new side.
+`pick` turns each selector into code: a path, then hunk numbers, a hunk anchor or a line range. Ranges now read like the new file. Anchors match context and added lines, and fall back to deleted lines only when the text exists nowhere else, as in a pure deletion. Deleted lines travel with the line after them, so a range never splits a replacement between its old and new side.
 
 ```hunks
-Sources/ReviewGuideCore/Resolver.swift lines 131-167
+Resolver.swift @ "private static func pick(" to "return .success(.hunks(file, [(hunk, lower"
 Tests/ReviewGuideCoreTests/AnchoredRangeTests.swift
 ```
 
-> [!QUESTION]
-> An anchored range cannot run to the end of a hunk, so splitting a new file into "everything from X on" still needs `lines`, as this guide does for `Resolver.swift`. Add `@ "from" to end`?
+This guide first split `Resolver.swift` with numeric `lines`. One commit later the file had grown nine lines, and coverage reported the nine at its end as unplaced. The worse effect was silent: every range after the change pointed nine lines too early, so this section would have shown the wrong code beside its text. So ranges gained `to end`, and blank changed lines no longer need placement: nothing can anchor a blank line, and two anchored ranges that meet between functions would otherwise strand the blank line between them. The guide now splits `Resolver.swift` by anchors only.
 
 ## Chapter 6 · Syntax highlighting {#syntax}
 A hunk is a fragment. It can start inside a block comment or a multi-line string, and a highlighter that starts at the hunk's first line colours everything after it wrong. So `Highlight` parses whole files, the old blob for deleted lines and the new blob for the rest, and slices the result per line.

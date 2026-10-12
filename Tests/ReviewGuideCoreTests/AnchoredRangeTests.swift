@@ -51,6 +51,23 @@ private func lines(_ resolution: Resolution, section: Int) -> [Range<Int>] {
         #expect(r.problems.filter { !$0.message.hasPrefix("unplaced") } == [])
     }
 
+    @Test func toEndRunsToTheEndOfTheHunk() throws {
+        let r = try analyze([
+            ("a", ["Clock.swift @ \"struct Clock\" to \"let id\"", "Block.swift @ \"line1\" to \"line3\""]),
+            ("b", ["Clock.swift @ \"clock every hour\" to end", "Block.swift @ \"line4\" to end"]),
+        ])
+        #expect(lines(r, section: 1) == [4..<11])
+        #expect(r.problems == [])
+    }
+
+    @Test func blankLinesBetweenRangesNeedNoPlacement() throws {
+        let spaced = DiffFile(path: "Spaced.swift", status: .added, hunks: [hunk(start: 1, ["+func a() {}", "+", "+   ", "+func b() {}"])])
+        let story = try StoryParser.parse("---\ntitle: T\n---\n## a\n```hunks\nSpaced.swift @ \"func a\" to \"func a\"\n```\n## b\n```hunks\nSpaced.swift @ \"func b\" to end\n```\n",
+                                          url: URL(fileURLWithPath: "/tmp/s.md"))
+        let r = Resolver.analyze(story, against: Diff(range: "r", base: "b", head: "h", files: [spaced], excluded: []))
+        #expect(r.problems == [])
+    }
+
     @Test func toOnAReplacementTakesItsNewSideAndTheDeletionsBeforeIt() throws {
         let r = try analyze([
             ("a", ["Clock.swift @ \"var threshold\" to \"clock every hour\""]),

@@ -77,6 +77,7 @@ public enum LinePick: Sendable, Equatable {
     /// From the one line containing `from` through the first line at or after it containing `to`, in the same hunk.
     /// Both anchors match context and added lines, and deleted lines only when no such line contains the text.
     /// Deleted lines travel with the next non-deleted line in their hunk (the previous one when they end it), so the
-    /// range also covers the deletions just before `from`. `hunks` is `.all` alongside this pick.
-    case anchored(from: String, to: String)
+    /// range also covers the deletions just before `from`. A `nil` `to` (written `to end`) runs to the end of the hunk.
+    /// `hunks` is `.all` alongside this pick.
+    case anchored(from: String, to: String?)
 }
