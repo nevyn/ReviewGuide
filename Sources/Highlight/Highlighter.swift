@@ -16,7 +16,11 @@ public struct Highlighter: LineStyling {
 
     /// `git` reads the old blobs at `diff.base` and the new blobs at `diff.head`, once per file.
     public init(git: Git, diff: Diff) {
-        self.init(diff: diff, readBlob: { rev, path in try git.show(rev: rev, path: path) })
+        guard let batch = try? BlobBatch(git: git) else {
+            self.init(diff: diff, readBlob: { rev, path in try git.show(rev: rev, path: path) })
+            return
+        }
+        self.init(diff: diff, readBlob: { rev, path in try batch.blob(rev: rev, path: path) })
     }
 
     /// Styles `diff` with blobs from `readBlob`: old sides at (`diff.base`, `oldPath ?? path`),
