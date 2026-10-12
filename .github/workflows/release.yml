@@ -1,0 +1,107 @@
+# On a v* tag: builds a universal storygrafter, publishes it as a GitHub release, and points the
+# Homebrew tap's formula at it. packaging/homebrew/README.md documents TAP_TOKEN.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+      tarball: ${{ steps.package.outputs.tarball }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Stamp the version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          printf '// Written by the release workflow.\nlet storygrafterVersion = "%s"\n' "$version" > Sources/storygrafter/Version.swift
+
+      - name: Test
+        run: swift test
+
+      - name: Build and package
+        id: package
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          swift build -c release --arch arm64 --arch x86_64
+          bin="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
+          stage="storygrafter-$version"
+          mkdir -p "$stage/licenses"
+          cp "$bin/storygrafter" "$stage/"
+          for b in "$bin"/*.bundle; do case "$b" in *Tests.bundle) ;; *) cp -R "$b" "$stage/" ;; esac; done
+          cp LICENSE "$stage/licenses/StoryGrafter"
+          find Grammars -name LICENSE | while read -r l; do
+            cp "$l" "$stage/licenses/tree-sitter-$(echo "${l#Grammars/}" | sed 's|/LICENSE$||; s|/|-|g')"
+          done
+          lipo -archs "$stage/storygrafter" | grep -q x86_64
+          lipo -archs "$stage/storygrafter" | grep -q arm64
+          [ "$("$stage/storygrafter" --version)" = "$version" ]
+          "$stage/storygrafter" format | grep -q '^# Story format'
+          tarball="storygrafter-$version-macos-universal.tar.gz"
+          tar -czf "$tarball" "$stage"
+          {
+            echo "version=$version"
+            echo "tarball=$tarball"
+            echo "sha256=$(shasum -a 256 "$tarball" | cut -d' ' -f1)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARBALL: ${{ steps.package.outputs.tarball }}
+        run: |
+          set -euo pipefail
+          previous="$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+          git log --format='- %s' "$previous..$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" "$TARBALL" --title "$GITHUB_REF_NAME" --notes-file notes.md
+
+  tap:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: storygrafter
+
+      - uses: actions/checkout@v4
+        with:
+          repository: nevyn/homebrew-tap
+          token: ${{ secrets.TAP_TOKEN }}
+          path: tap
+
+      - name: Update Formula/storygrafter.rb
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.build.outputs.version }}
+          SHA256: ${{ needs.build.outputs.sha256 }}
+          TARBALL: ${{ needs.build.outputs.tarball }}
+        run: |
+          set -eu
+          url="https://github.com/nevyn/StoryGrafter/releases/download/$TAG/$TARBALL"
+          mkdir -p tap/Formula
+          sed -e "s|^  url \".*\"$|  url \"$url\"|" \
+              -e "s|^  sha256 \".*\"$|  sha256 \"$SHA256\"|" \
+              storygrafter/packaging/homebrew/storygrafter.rb > tap/Formula/storygrafter.rb
+          grep -qF "url \"$url\"" tap/Formula/storygrafter.rb || { echo "url line not rewritten in Formula/storygrafter.rb" >&2; exit 1; }
+          grep -qF "sha256 \"$SHA256\"" tap/Formula/storygrafter.rb || { echo "sha256 line not rewritten in Formula/storygrafter.rb" >&2; exit 1; }
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/storygrafter.rb
+          if git diff --cached --quiet; then
+            echo "Formula/storygrafter.rb already points at $VERSION"
+            exit 0
+          fi
+          git commit -m "storygrafter $VERSION"
+          git push

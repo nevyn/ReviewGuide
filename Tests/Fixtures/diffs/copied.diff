@@ -1,0 +1,14 @@
+diff --git a/Renamed.txt b/Copy.txt
+similarity index 96%
+copy from Renamed.txt
+copy to Copy.txt
+index e500befa..626a49ee 100644
+--- a/Renamed.txt
++++ b/Copy.txt
+@@ -1,5 +1,5 @@
+ row 1
+-row 2
++row two
+ row 3
+ row 4
+ row 5

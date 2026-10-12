@@ -1,0 +1,16 @@
+diff --git a/Moved.txt b/Renamed.txt
+similarity index 94%
+rename from Moved.txt
+rename to Renamed.txt
+index 2878bb6f..e500befa 100644
+--- a/Moved.txt
++++ b/Renamed.txt
+@@ -12,7 +12,7 @@ row 11
+ row 12
+ row 13
+ row 14
+-row 15
++row fifteen
+ row 16
+ row 17
+ row 18

@@ -1,0 +1,19 @@
+diff --git a/base.txt b/base.txt
+index c4352f8b..bd17d1b8 100644
+--- a/base.txt
++++ b/base.txt
+@@ -1,5 +1,5 @@
+ line 1
+-line 2
++line two
+ line 3
+ line 4
+ line 5
+@@ -15,6 +15,6 @@ line 14
+ line 15
+ line 16
+ line 17
+-line 18
++line eighteen
+ line 19
+ line 20
