@@ -18,10 +18,10 @@ Stories and guides live in the repository's common git directory, which every wo
 
 ```
 $(git rev-parse --git-common-dir)/review-guides/<branch>.md
-$(git rev-parse --git-common-dir)/review-guides/<branch>.html   # or .md for --format md
+$(git rev-parse --git-common-dir)/review-guides/<branch>.html   # or .guide.md for --format md
 ```
 
-`<branch>` keeps its slashes as subdirectories. A detached HEAD is an error unless `--story` is given.
+`<branch>` keeps its slashes as subdirectories. A detached HEAD is an error unless `--story` is given. With `--story x/foo.md`, the guide defaults to `x/foo.html` or `x/foo.guide.md`.
 
 ## Exit status
 

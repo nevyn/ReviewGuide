@@ -1,0 +1,9 @@
+diff --git a/keep.txt b/keep.txt
+old mode 100755
+new mode 100644
+index 2fa992c0..bd930095
+--- a/keep.txt
++++ b/keep.txt
+@@ -1 +1 @@
+-keep
++kept

@@ -1,0 +1,9 @@
+diff --git a/Hello.swift b/Hello.swift
+new file mode 100644
+index 00000000..22c75134
+--- /dev/null
++++ b/Hello.swift
+@@ -0,0 +1,3 @@
++func hello() {
++    print("hi")
++}
