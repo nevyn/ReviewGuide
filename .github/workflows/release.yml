@@ -1,0 +1,36 @@
+# Builds the universal macOS release when a v* tag is pushed.
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: swift test
+      - name: Build
+        run: swift build -c release --arch arm64 --arch x86_64
+      - name: Package
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          bin="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
+          stage="reviewguide-$version"
+          mkdir -p "$stage/licenses"
+          cp "$bin/reviewguide" "$stage/"
+          cp -R "$bin"/*.bundle "$stage/"
+          cp LICENSE "$stage/licenses/ReviewGuide"
+          for l in Grammars/*/LICENSE; do cp "$l" "$stage/licenses/tree-sitter-$(basename "$(dirname "$l")")"; done
+          "$stage/reviewguide" format > /dev/null
+          tar -czf "$stage-macos.tar.gz" "$stage"
+          shasum -a 256 "$stage-macos.tar.gz" | tee "$stage-macos.tar.gz.sha256"
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release upload "$GITHUB_REF_NAME" "reviewguide-$version-macos.tar.gz" "reviewguide-$version-macos.tar.gz.sha256" --clobber

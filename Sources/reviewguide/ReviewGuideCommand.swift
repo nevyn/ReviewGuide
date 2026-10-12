@@ -8,6 +8,7 @@ struct ReviewGuideCommand: ParsableCommand {
         commandName: "reviewguide",
         abstract: "Builds a review guide: a story about a change, told next to the diff lines it explains.",
         discussion: "Stories are Markdown; `reviewguide format` prints the specification. Exit status: 0 success, 1 the story does not satisfy the diff, 2 usage, git, IO or upload error.",
+        version: reviewguideVersion,
         subcommands: [List.self, Check.self, Build.self, Upload.self, Paths.self, Format.self])
 
     static func main() {
