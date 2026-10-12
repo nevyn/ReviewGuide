@@ -1,0 +1,17 @@
+{
+  "name": "nevyn-reviewguide",
+  "owner": {
+    "name": "Nevyn Bengtsson",
+    "url": "https://github.com/nevyn"
+  },
+  "metadata": {
+    "description": "ReviewGuide: review guides that tell the story of a code change next to its diff."
+  },
+  "plugins": [
+    {
+      "name": "reviewguide",
+      "source": "./plugin",
+      "description": "The review-guide skill: writes the story of a change from the authoring session, checks that it covers every changed line, builds the guide and uploads it."
+    }
+  ]
+}

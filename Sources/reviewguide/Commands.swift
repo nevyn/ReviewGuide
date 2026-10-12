@@ -191,3 +191,15 @@ struct Paths: ParsableCommand {
         Console.current.out("story  \(paths.story.path)\nhtml   \(paths.html.path)\nmd     \(paths.markdown.path)")
     }
 }
+
+struct Format: ParsableCommand {
+    static let configuration = CommandConfiguration(abstract: "Prints the story format specification for this version.")
+
+    func run() throws {
+        let bundle = ResourceBundle.named("ReviewGuide_reviewguide") ?? Bundle.module
+        guard let url = bundle.url(forResource: "story-format", withExtension: "md") else {
+            throw UsageError("story-format.md is missing from the reviewguide resource bundle")
+        }
+        Console.current.out(try String(contentsOf: url, encoding: .utf8))
+    }
+}

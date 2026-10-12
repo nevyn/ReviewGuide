@@ -1,0 +1,11 @@
+{
+  "name": "reviewguide",
+  "description": "Writes a review guide for the current branch: the story of the change, told from what the authoring session learned, next to every changed line. Needs the reviewguide command (brew install nevyn/tap/reviewguide).",
+  "version": "0.1.0",
+  "author": {
+    "name": "Nevyn Bengtsson",
+    "url": "https://github.com/nevyn"
+  },
+  "repository": "https://github.com/nevyn/ReviewGuide",
+  "keywords": ["review", "diff", "pull request", "merge request"]
+}
