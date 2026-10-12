@@ -105,6 +105,6 @@ Context lines may appear in several sections without `again`.
 
 ## Supplementary reading
 
-- **Footnotes**: GFM `[^id]` references and `[^id]: text` definitions. The definition may sit anywhere in the story.
+- **Footnotes**: GFM `[^id]` references and `[^id]: text` definitions. The definition may sit anywhere in the story. Ids are case-insensitive, as in CommonMark.
 - **Alerts**: `> [!NOTE]`, `> [!WARNING]` and `> [!QUESTION]`. `[!QUESTION]` marks something the author has not settled.
-- **Attachments**: a fenced block whose info string is `<language> attachment "<caption>"` embeds its content folded and highlighted. `attachment "<caption>" file=<path>` embeds a file instead, with `<path>` relative to the story file and the language taken from its extension.
+- **Attachments**: a fenced block whose info string is `<language> attachment "<caption>"` embeds its content folded and highlighted. `attachment "<caption>" file=<path>` embeds a file instead, with `<path>` relative to the story file and the language taken from its extension. A caption cannot contain `"` or a backtick, because CommonMark unescapes info strings and a backtick fence ends at a backtick.
