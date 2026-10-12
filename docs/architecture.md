@@ -20,20 +20,21 @@ One SwiftPM package. The `reviewguide` executable and its resource bundle are th
 
 A hunk is a fragment: it can start inside a block comment or a multi-line string, and a lexer that starts at the hunk's first line colours everything after it wrong. So `Highlight` lexes whole files and then slices:
 
-1. Fetch the old blob (`git show <base>:<oldPath>`) and the new blob (`git show <head>:<path>`) once per file.
-2. Parse each with the file's tree-sitter grammar and run the grammar's highlight query. Captures become runs with UTF-8 byte ranges.
-3. Split the runs at line breaks into one list per line.
-4. A deleted line takes its styling from the old file at its old line number. Added and context lines take it from the new file.
+1. Read the old blob (`<base>:<oldPath ?? path>`) and the new blob (`<head>:<path>`) once per file, on first use. Added files have no old side, deleted files no new side.
+2. Pick the grammar from the path's extension or file name, else from a `#!` first line. Parse the blob and run the language's highlight query. Markdown runs the inline grammar over the block tree's `inline` and table-cell ranges and adds its captures.
+3. Flatten the captures, which nest and overlap: each character takes the capture of the innermost node, and on equal ranges the later pattern in the query wins. Capture names are normalised to the renderer's theme vocabulary (docs/grammars.md); `variable` and `none` take part but render unstyled, so an identifier inside a string interpolation is not coloured as string.
+4. Split into UTF-8 runs per line.
+5. A deleted line takes its styling from the old file at its old line number. Added and context lines take it from the new file. A line whose text differs from its blob line gets no syntax.
 
-A language without a grammar, or a file that does not parse, renders unstyled. Highlighting never fails the build.
+A language without a grammar, a blob over 1 MB or not UTF-8, and a parse over 2 s render unstyled. Highlighting never fails the build; unexpected failures (a git error, a timeout, a query that does not compile) are warned about on stderr. The grammars and queries are vendored: docs/grammars.md.
 
 ## Change highlighting
 
-Within each hunk, every run of deleted lines followed by a run of added lines is a replacement.
+Within each hunk, every run of deleted lines directly followed by a run of added lines is a replacement.
 
-1. Pair the deleted and added lines of a replacement by similarity, in order. A pair below the similarity threshold stays unpaired and keeps plain line colouring.
-2. For each pair, tokenize both lines into words, whitespace runs and single punctuation characters, and diff the token sequences.
-3. Tokens that differ are marked changed.
+1. Tokenize each line into words (letters, digits, `_`, combining marks), whitespace runs and single other characters.
+2. Pair the deleted and added lines in order: each deleted line takes the best-scoring added line among the next 16 after the previous pair, so pairs never cross. The score is 2 × matching tokens / total tokens, counting non-whitespace tokens only; a pair needs 0.5. Unpaired lines keep plain line colouring.
+3. Diff each pair's token sequences with `CollectionDifference`. Tokens that differ, whitespace included, are marked changed.
 
 ## Styled runs
 
