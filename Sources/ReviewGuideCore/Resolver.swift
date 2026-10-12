@@ -61,8 +61,17 @@ public enum Resolver {
                 continue
             }
             for hunk in file.hunks {
-                for (index, line) in hunk.lines.enumerated() where line.isChange {
-                    guard placements.lines[.init(path: file.path, hunk: hunk.number, index: index)] == nil else { continue }
+                let unplaced = hunk.lines.indices.filter {
+                    hunk.lines[$0].isChange && placements.lines[.init(path: file.path, hunk: hunk.number, index: $0)] == nil
+                }
+                if unplaced.count > 3, unplaced.count == hunk.lines.filter(\.isChange).count {
+                    let added = unplaced.filter { hunk.lines[$0].kind == .add }.count
+                    problems.append(StoryProblem(
+                        message: "unplaced: \(file.path) #\(hunk.number) (all of it: +\(added) -\(unplaced.count - added))"))
+                    continue
+                }
+                for index in unplaced {
+                    let line = hunk.lines[index]
                     let old = line.old.map(String.init) ?? "-", new = line.new.map(String.init) ?? "-"
                     problems.append(StoryProblem(message: "unplaced: \(file.path) #\(hunk.number) \(old)/\(new): \(line.text)"))
                 }

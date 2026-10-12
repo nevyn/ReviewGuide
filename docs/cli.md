@@ -28,7 +28,7 @@ $(git rev-parse --git-common-dir)/review-guides/<branch>.html   # or .guide.md f
 | Code | Meaning |
 |---|---|
 | 0 | Success. Warnings (such as a `head` mismatch) go to stderr. |
-| 1 | The story does not satisfy the diff: coverage or selector errors, all of them listed on stderr as `<section id>: <selector>: <problem>` or `unplaced: <path> #<hunk> <old>/<new>: <line text>`. |
+| 1 | The story does not satisfy the diff: coverage or selector errors, all of them listed on stderr as `<section id>: <selector>: <problem>` or `unplaced: <path> #<hunk> <old>/<new>: <line text>`. A hunk with more than three changed lines, none of them placed, is one line: `unplaced: <path> #<hunk> (all of it: +<added> -<deleted>)`. |
 | 2 | Usage error, git failure, unreadable story, or upload failure. The message names the failing input. |
 
 ## `list --json`

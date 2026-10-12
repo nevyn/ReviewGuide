@@ -104,6 +104,16 @@ private let everything = ["Station.swift", "Drift.swift", "\"Docs/New Name.md\""
         ])
     }
 
+    @Test func wholeUnplacedHunksAreSummarised() throws {
+        let file = DiffFile(path: "New.swift", status: .added, hunks: [Hunk(
+            number: 1, header: "", oldStart: 0, oldCount: 0, newStart: 1, newCount: 4,
+            lines: (1...4).map { DiffLine(kind: .add, old: nil, new: $0, text: "line \($0)") })])
+        let diff = Diff(range: "a..b", base: "a", head: "b", files: [file], excluded: [])
+        let story = Story(url: URL(fileURLWithPath: "/s.md"), title: "T")
+        #expect(Resolver.analyze(story, against: diff).problems.map(\.description)
+            == ["unplaced: New.swift #1 (all of it: +4 -0)"])
+    }
+
     @Test func sectionProblemsComeBeforeUnplacedInStoryOrder() throws {
         let found = try problems(["z": ["Nope.swift"], "a": ["Station.swift #9"]], order: ["z", "a"])
         #expect(found.prefix(2) == [

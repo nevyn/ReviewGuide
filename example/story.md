@@ -6,9 +6,9 @@ exclude: ["Grammars/*", "Sources/Highlight/Resources/queries/*", "Tests/Fixtures
 ---
 The prototype proved one idea: a reviewer follows a change far more easily when the author's explanation sits next to the code it explains, and when the tool guarantees that the explanation covers every changed line. v1 keeps that idea and rebuilds everything around it. Stories are Markdown, coverage is checked per line, code is highlighted with tree-sitter, and a skill writes the story from what the authoring session learned.
 
-This guide was written with the tool it describes, and writing it found two bugs.[^dogfood]
+This guide was written with the tool it describes, and writing it found two bugs and a slow build.[^dogfood]
 
-[^dogfood]: The quadratic diff parser (Chapter 3) and the anchored ranges that could not name a changed line (Chapter 5).
+[^dogfood]: The quadratic diff parser and the git process per blob (Chapter 3), and the anchored ranges that could not name a changed line (Chapter 5).
 
 ## Prologue · A diff is a list; a change is a story
 A diff shows files in path order, which is rarely the order that a change makes sense in. A review guide puts the author's story on the left, one idea per section, and the exact diff lines that the idea is about on the right.
@@ -58,13 +58,17 @@ Writing this guide found a bug here. Listing this branch never finished: its dif
 
 [^quadratic]: `if var h = hunk { h.consume(line); hunk = h }` binds a copy that shares the `lines` buffer, so the append triggers copy-on-write of the entire array. A first fix with `if let` had the same flaw: any live binding keeps the buffer shared. Fixed in 6d37c7b4.
 
+Writing it also showed that building was slow: 14 s for this guide, nearly all of it spent starting two git processes per blob. `BlobBatch` keeps one `git cat-file --batch` running and reads every blob through it, which takes the build to 1.6 s with identical output.
+
 `Git` drains stderr on a dedicated thread. Draining it on `DispatchQueue.global()` hung the test suite once parallel tests had filled the cooperative pool: every test waited on a drain block that never got a thread.
 
 ```hunks
 Sources/ReviewGuideCore/Git.swift
 Sources/ReviewGuideCore/DiffParser.swift
 Sources/ReviewGuideCore/DiffLoader.swift
+Sources/ReviewGuideCore/BlobBatch.swift
 Tests/ReviewGuideCoreTests/DiffParserTests.swift
+Tests/ReviewGuideCoreTests/BlobBatchTests.swift
 Tests/ReviewGuideCoreTests/DiffLoaderTests.swift
 Tests/ReviewGuideCoreTests/TempRepo.swift
 Tests/ReviewGuideCoreTests/Fixtures.swift
@@ -75,7 +79,7 @@ Tests/ReviewGuideCoreTests/Fixtures.swift
 
 Placement is keyed by path, hunk number and line index. Context lines never count: they may appear in several sections, because a reader needs them for orientation. `again` shows code without placing it, for a section that revisits code that an earlier section explained.
 
-Every problem names its input: the section, the selector as written, and for an unplaced line its path, hunk, old and new line numbers and text. `check` prints all of them, so one run tells the author everything that is missing.
+Every problem names its input: the section, the selector as written, and for an unplaced line its path, hunk, old and new line numbers and text. `check` prints all of them, so one run tells the author everything that is missing. A hunk with more than three changed lines and none of them placed is reported as one line, so a forgotten new file doesn't bury the rest of the list.
 
 ```hunks
 Sources/ReviewGuideCore/Resolver.swift lines 1-130
@@ -185,7 +189,7 @@ Tests/ReviewGuideCoreTests/PathsConfigUploadTests.swift
 ## Chapter 10 · The skill {#skill}
 The guide's value is what the authoring session knows and the diff doesn't show: why the change exists, the evidence, the approaches that failed. Only that session has it, so the skill runs there, at the end of the work.
 
-The skill also makes writing the guide a review. Every claim gets checked against the code, and every doubt ends as either a reported bug or an open question in the guide, never as confident prose. That is how this guide found its two bugs.
+The skill also makes writing the guide a review. Every claim gets checked against the code, and every doubt ends as either a reported bug or an open question in the guide, never as confident prose. That is how this guide found its bugs.
 
 The repository is its own plugin marketplace, like Rivulets.
 
