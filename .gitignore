@@ -1,0 +1,3 @@
+# Generated guides; they embed the reviewed code, which may not be yours to publish.
+*.html
+!template.html
