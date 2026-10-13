@@ -4,9 +4,14 @@ A gardener grafts a scion onto a rootstock so that the two grow as one tree. Sto
 
 It builds a **review guide**: the story of a change in sections on the left, and next to each section the exact diff lines it explains. The output is one self-contained HTML file. The idea comes from Linear's review guides (https://linear.app/docs/diffs).
 
-[![A section of StoryGrafter's own review guide: the story on the left, the highlighted code it explains on the right](docs/images/example-guide.png)](https://files.d.nevyn.dev/k/1d773aad592e8125/storygrafter-v1-guide.html)
+[![Two sections of a review guide for alloverse/allonet2#46: the story on the left with numbered markers, and the highlighted diff on the right with the same markers on the code they point at](docs/images/example-guide.png)](https://files.d.nevyn.dev/k/59b72839cae4e5e7/allonet2-46-guide.html)
 
-[Open the full example guide](https://files.d.nevyn.dev/k/1d773aad592e8125/storygrafter-v1-guide.html): StoryGrafter's own v1 change, built from [example/story.md](example/story.md).
+[Open the full example guide](https://files.d.nevyn.dev/k/59b72839cae4e5e7/allonet2-46-guide.html) for [alloverse/allonet2#46](https://github.com/alloverse/allonet2/pull/46), a fix for a server beat that slowed down as its world grew. The story, [example/allonet2-46.md](example/allonet2-46.md), was reconstructed afterwards from the pull request and its commits rather than written in the authoring session. To rebuild it:
+
+```sh
+git clone https://github.com/alloverse/allonet2.git
+storygrafter build --repo allonet2 --story example/allonet2-46.md --out allonet2-46.html
+```
 
 The build enforces **coverage**: every changed line of the diff is placed in exactly one section, so a reviewer who reads the story has seen the whole change.
 
