@@ -26,6 +26,10 @@
 
 **Exclusion** — A pathspec glob, declared in the story's front matter, that removes files from the diff. The guide lists every exclusion and the files it removed.
 
+**Marker** — A `{@ "text"}` in section prose that points at one exact place in the section's code. Rendered as a numbered, coloured circle in both columns. Not: callout, annotation.
+
+**Code link** — An inline code span in section prose whose text occurs exactly once in the section's code, and so links to it without a number.
+
 **Replacement** — A run of deleted lines directly followed by a run of added lines in one hunk. Change highlighting pairs lines only within a replacement.
 
 **Upload command** — The author's configured shell command that publishes a file and prints its URL.

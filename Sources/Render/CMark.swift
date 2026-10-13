@@ -82,6 +82,18 @@ final class CMarkDocument {
     }
 
     func codeBlocks() -> [CMarkNode] { nodes(where: { cmark_node_get_type($0) == CMARK_NODE_CODE_BLOCK }) }
+    /// Inline code spans that are not already inside a link.
+    func codeSpans() -> [CMarkNode] {
+        nodes(where: { node in
+            guard cmark_node_get_type(node) == CMARK_NODE_CODE else { return false }
+            var parent = cmark_node_parent(node)
+            while let p = parent {
+                if cmark_node_get_type(p) == CMARK_NODE_LINK { return false }
+                parent = cmark_node_parent(p)
+            }
+            return true
+        })
+    }
 
     /// 1-based story lines that `node` spans, inclusive.
     func lines(of node: CMarkNode) -> ClosedRange<Int> {

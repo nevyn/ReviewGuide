@@ -35,6 +35,7 @@ Order sections the way the change makes sense, not by path:
 ## 4. Write
 
 - Explain mechanism and intent, not the diff. "`resync()` now reads the skew before it takes the lock, because the lock is held across a network call" is useful; "adds a `let skew` line" is not.
+- Point at the exact code you are talking about with markers: `{@ "let skew"}` puts a numbered circle in the sentence and on that text in the code. Use one wherever a sentence makes a claim about a specific line or token, typically one to four per section. Name code in backticks too: a backticked name that occurs once in the section's code links to it automatically.
 - Choose each section's selectors so that the code beside the text is what the text is about. Prefer content anchors (`@ "func resync("`, `@ "from" until "next"`, `@ "from" to end`) over hunk and line numbers: anchors survive rebases.
 - Put evidence in footnotes, long research in the appendix, and payloads, logs and crash excerpts in attachments.
 - Write in the author's voice. Don't mention the agent or the session.

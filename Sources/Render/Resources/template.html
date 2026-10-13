@@ -10,6 +10,8 @@
   --note:#0969da; --warning:#9a6700; --question:#8250df;
   --hl-keyword:#cf222e; --hl-string:#0a3069; --hl-comment:#6e7781; --hl-constant:#0550ae; --hl-type:#953800;
   --hl-function:#6639ba; --hl-variable:#953800; --hl-property:#0550ae; --hl-tag:#116329; --hl-punct:#57606a;
+  --mk0:#cfe2ff; --mk1:#ffdcc2; --mk2:#cdeccf; --mk3:#e3d7fb; --mk4:#f9d3e6; --mk5:#c9ecec;
+  --mkink0:#1d4f91; --mkink1:#8a4300; --mkink2:#1f6a2b; --mkink3:#5b3c9e; --mkink4:#8f2a5c; --mkink5:#17666b;
 }
 @media (prefers-color-scheme: dark) { :root {
   --bg:#0d1117; --fg:#e6edf3; --muted:#8d96a0; --line:#30363d; --panel:#161b22; --accent:#8b93ff;
@@ -17,6 +19,8 @@
   --note:#4493f8; --warning:#d29922; --question:#ab7df8;
   --hl-keyword:#ff7b72; --hl-string:#a5d6ff; --hl-comment:#8b949e; --hl-constant:#79c0ff; --hl-type:#ffa657;
   --hl-function:#d2a8ff; --hl-variable:#ffa657; --hl-property:#79c0ff; --hl-tag:#7ee787; --hl-punct:#8b949e;
+  --mk0:#a9c8f5; --mk1:#f5c4a1; --mk2:#aedcb2; --mk3:#cdb9f2; --mk4:#f0b6d2; --mk5:#a6dcdc;
+  --mkink0:#0b1f3a; --mkink1:#3a1d06; --mkink2:#0e2a13; --mkink3:#24154a; --mkink4:#3d1028; --mkink5:#0b2e30;
 } }
 * { box-sizing:border-box; }
 body { margin:0; font:14px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); }
@@ -106,6 +110,24 @@ footer { padding:16px 32px 32px; color:var(--muted); font-size:12px; }
   nav { padding:8px 16px; }
   .story { padding:20px 16px; } .code { padding:16px; }
 }
+.mk-c0 { --mk:var(--mk0); --mkink:var(--mkink0); } .mk-c1 { --mk:var(--mk1); --mkink:var(--mkink1); }
+.mk-c2 { --mk:var(--mk2); --mkink:var(--mkink2); } .mk-c3 { --mk:var(--mk3); --mkink:var(--mkink3); }
+.mk-c4 { --mk:var(--mk4); --mkink:var(--mkink4); } .mk-c5 { --mk:var(--mk5); --mkink:var(--mkink5); }
+a.mk { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; min-width:1.45em; height:1.45em;
+  padding:0 .3em; margin:0 .15em; border-radius:999px; background:var(--mk); color:var(--mkink); text-decoration:none;
+  font:700 10.5px/1 -apple-system, BlinkMacSystemFont, sans-serif; vertical-align:.15em; cursor:pointer;
+  transition:box-shadow .12s, transform .12s; }
+td.code a.mk { margin:0 .35em 0 .1em; vertical-align:.05em; user-select:none; }
+.mkt { box-shadow:inset 0 -2px 0 color-mix(in srgb, var(--mkink) 45%, transparent); border-radius:2px; transition:background .12s; }
+a.mk.on { box-shadow:0 0 0 3px color-mix(in srgb, var(--mkink) 25%, transparent); transform:scale(1.15); }
+.mkt.on { background:color-mix(in srgb, var(--mk) 75%, transparent); }
+@media (prefers-color-scheme: dark) { .mkt.on { background:color-mix(in srgb, var(--mk) 30%, transparent); } }
+a.cl { color:inherit; text-decoration:none; }
+a.cl code { text-decoration:underline dotted color-mix(in srgb, var(--fg) 45%, transparent); text-underline-offset:3px; cursor:pointer; }
+.clt { border-radius:2px; transition:background .12s; }
+a.cl.on code, .clt.on { background:color-mix(in srgb, var(--accent) 24%, transparent); }
+@keyframes flash { from { background:color-mix(in srgb, var(--accent) 45%, transparent); } }
+.flash { animation:flash 1.2s ease-out; }
 @media print {
   nav, input.reviewed { display:none; }
   .sticky { position:static; }
@@ -141,6 +163,28 @@ footer { padding:16px 32px 32px; color:var(--muted); font-size:12px; }
       mark(box);
     });
   })(boxes[i]);
+
+  // Markers (data-mk) and code links (data-cl) pair an element in the prose with one in the code: hovering either
+  // lights up both, and a click scrolls to the partner, which may be far down the code column.
+  function partners(attr, id) { return document.querySelectorAll("[" + attr + "~=\"" + id + "\"]"); }
+  ["data-mk", "data-cl"].forEach(function (attr) {
+    var els = document.querySelectorAll("[" + attr + "]");
+    for (var i = 0; i < els.length; i++) (function (el) {
+      var ids = el.getAttribute(attr).split(" ");
+      function light(on) { ids.forEach(function (id) { partners(attr, id).forEach(function (p) { p.classList.toggle("on", on); }); }); }
+      el.addEventListener("mouseenter", function () { light(true); });
+      el.addEventListener("mouseleave", function () { light(false); });
+      if (el.tagName !== "A") return;
+      el.addEventListener("click", function (event) {
+        var target = document.getElementById(el.getAttribute("href").slice(1));
+        if (!target) return;
+        event.preventDefault();
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        var flashed = target.closest("tr") || target;
+        flashed.classList.remove("flash"); void flashed.offsetWidth; flashed.classList.add("flash");
+      });
+    })(els[i]);
+  });
 })();
 </script>
 </body></html>
