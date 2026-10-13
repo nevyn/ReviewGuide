@@ -16,8 +16,14 @@ public struct ResolvedSection: Sendable, Equatable {
     public var section: Section
     /// The code column in selector order; empty when the section has no `hunks` fence.
     public var code: [ShownCode]
+    /// The section's `{@ …}` markers in reading order; marker n is `markers[n - 1]`.
+    public var markers: [Marker]
+    /// Inline code spans in the prose whose text occurs exactly once in `code`, keyed by the span's text.
+    public var codeLinks: [String: CodeTarget]
 
-    public init(section: Section, code: [ShownCode]) { self.section = section; self.code = code }
+    public init(section: Section, code: [ShownCode], markers: [Marker] = [], codeLinks: [String: CodeTarget] = [:]) {
+        self.section = section; self.code = code; self.markers = markers; self.codeLinks = codeLinks
+    }
 }
 
 public enum ShownCode: Sendable, Equatable {

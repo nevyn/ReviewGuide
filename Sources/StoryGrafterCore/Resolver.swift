@@ -50,7 +50,17 @@ public enum Resolver {
                     }
                 }
             }
-            sections.append(ResolvedSection(section: section, code: code))
+            let (markers, links, markerProblems) = Self.markers(for: section, code: code)
+            problems += markerProblems
+            sections.append(ResolvedSection(section: section, code: code, markers: markers, codeLinks: links))
+        }
+        for (place, text) in [("summary", story.summary)] + story.appendix.map({ ($0.id, $0.body) })
+            + story.footnotes.sorted(by: { $0.key < $1.key }).map({ ("footnote [^\($0.key)]", $0.value) }) {
+            for occurrence in MarkerSyntax.scan(text) {
+                if case .codeSpan = occurrence.kind { continue }
+                problems.append(StoryProblem(sectionID: place, selector: occurrence.source,
+                                             message: "markers point at a section's code, so they belong in section prose"))
+            }
         }
 
         for file in diff.files {
