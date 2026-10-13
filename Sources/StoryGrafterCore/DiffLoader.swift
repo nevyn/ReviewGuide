@@ -53,4 +53,12 @@ public enum DiffLoader {
             throw UsageError("range '\(range)': '\(rev)' is not a commit in \(git.repo.path) (\(error))")
         }
     }
+
+    /// `<origin's default branch>...HEAD`, from `refs/remotes/origin/HEAD`, which `git clone` sets and
+    /// `git remote set-head origin --auto` repairs; `origin/main...HEAD` when it is not set.
+    public static func defaultRange(git: Git) -> String {
+        let ref = (try? git.run(["symbolic-ref", "--short", "-q", "refs/remotes/origin/HEAD"]))?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return "\(ref.isEmpty ? "origin/main" : ref)...HEAD"
+    }
 }

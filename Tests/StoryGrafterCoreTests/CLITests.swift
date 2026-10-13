@@ -161,7 +161,8 @@ private struct JSONDocument: Decodable {
         let story = try writeStory(repo, completeStory.replacingOccurrences(of: "range: main...feature\n", with: "range: main...feature\nhead: 0000000\n"))
         let result = run(["check", "--repo", repo.url.path, "--story", story])
         #expect(result.status == 0)
-        #expect(result.stderr.count == 1 && result.stderr[0].hasPrefix("warning: the story was written against 0000000, but the diff's head is "))
+        #expect(result.stderr.count == 1 && result.stderr[0].hasPrefix("warning: the story says head: 0000000, but the diff's head is "))
+        #expect(result.stderr.first?.contains("then set head: ") == true)
     }
 
     @Test(arguments: [["--range", "main"], ["--range", "main..nope"]])

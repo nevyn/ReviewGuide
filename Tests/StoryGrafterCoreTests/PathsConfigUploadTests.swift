@@ -23,6 +23,41 @@ import Testing
                 repo.url.appendingPathComponent(".git/review-guides/other.md").resolvingSymlinksInPath().path)
     }
 
+    @Test func unwritableGitDirFallsBackToTmpAndTheStoryIsFoundLater() throws {
+        let repo = try TempRepo.standard()
+        let gitDir = repo.url.appendingPathComponent(".git")
+        let fm = FileManager.default
+        try fm.setAttributes([.posixPermissions: 0o555], ofItemAtPath: gitDir.path)
+        defer { try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: gitDir.path) }
+
+        let sandboxed = try GuidePaths.forCurrentBranch(git: repo.git)
+        #expect(sandboxed.location == .temporary)
+        #expect(sandboxed.story.path.hasPrefix("/tmp/storygrafter/") && sandboxed.story.path.hasSuffix("/feature.md"))
+        defer { try? fm.removeItem(at: sandboxed.story.deletingLastPathComponent()) }
+        try "story".write(to: sandboxed.story, atomically: true, encoding: .utf8)
+
+        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: gitDir.path)
+        #expect(try GuidePaths.forCurrentBranch(git: repo.git) == sandboxed)
+    }
+
+    @Test func temporaryRootIsStablePerCloneAndNamedAfterTheRepo() {
+        let a = GuidePaths.temporaryRoot(forCommonDir: URL(fileURLWithPath: "/Users/x/Dev/app/.git"))
+        #expect(a == GuidePaths.temporaryRoot(forCommonDir: URL(fileURLWithPath: "/Users/x/Dev/app/.git")))
+        #expect(a != GuidePaths.temporaryRoot(forCommonDir: URL(fileURLWithPath: "/Users/x/Other/app/.git")))
+        #expect(a.lastPathComponent.hasPrefix("app-"))
+    }
+
+    @Test func defaultRangeFollowsOriginsDefaultBranch() throws {
+        let upstream = try TempRepo.standard()
+        _ = try upstream.git.run(["checkout", "-q", "main"])
+        _ = try upstream.git.run(["branch", "-m", "main", "develop"])
+        #expect(DiffLoader.defaultRange(git: upstream.git) == "origin/main...HEAD")
+
+        let clone = FileManager.default.temporaryDirectory.appendingPathComponent("StoryGrafterTests-\(UUID().uuidString)")
+        _ = try upstream.git.run(["clone", "-q", upstream.url.path, clone.path])
+        #expect(DiffLoader.defaultRange(git: Git(repo: clone)) == "origin/develop...HEAD")
+    }
+
     @Test func detachedHeadIsAUsageError() throws {
         let repo = try TempRepo.standard()
         _ = try repo.git.run(["checkout", "-q", "--detach"])

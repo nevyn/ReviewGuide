@@ -8,10 +8,10 @@ struct CommonOptions: ParsableArguments {
     @Option(help: "The git work tree to diff.")
     var repo: String = "."
 
-    @Option(help: "The git diff range; overrides the story's 'range'. Default: origin/main...HEAD.")
+    @Option(help: "The git diff range; overrides the story's 'range'. Default: <origin's default branch>...HEAD.")
     var range: String?
 
-    @Option(help: "The story file. Default: <git-common-dir>/review-guides/<branch>.md.")
+    @Option(help: "The story file. Default: <git-common-dir>/review-guides/<branch>.md, or under /tmp/storygrafter when that is not writable.")
     var story: String?
 
     var git: Git { Git(repo: URL(fileURLWithPath: repo).standardizedFileURL) }
@@ -50,10 +50,15 @@ struct CommonOptions: ParsableArguments {
         }
     }
 
+    func resolvedRange(for story: Story?) -> String {
+        range ?? story?.range ?? DiffLoader.defaultRange(git: git)
+    }
+
     func loadDiff(for story: Story?) throws -> Diff {
-        let diff = try DiffLoader.load(git: git, range: range ?? story?.range ?? "origin/main...HEAD", exclude: story?.exclude ?? [])
+        let diff = try DiffLoader.load(git: git, range: resolvedRange(for: story), exclude: story?.exclude ?? [])
         if let head = story?.head, !diff.head.hasPrefix(head.lowercased()) {
-            Console.current.err("warning: the story was written against \(head), but the diff's head is \(diff.head)")
+            Console.current.err("warning: the story says head: \(head), but the diff's head is \(diff.head.prefix(8)); "
+                + "check the sections whose code changed since, then set head: \(diff.head.prefix(8))")
         }
         return diff
     }
