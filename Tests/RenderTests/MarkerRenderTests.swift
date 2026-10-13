@@ -48,4 +48,21 @@ private func markedSection() -> ResolvedSection {
         #expect(md.contains("Shorter \u{2460} for `resync()`"))
         #expect(md.contains("+    let skew = offset(timeout: 2)  \u{2190} \u{2460}"))
     }
+
+    @Test func codeSpansInsideLinksStayPlain() throws {
+        var rs = markedSection()
+        rs.section.body = "See [`resync()`](https://example.com/docs)."
+        rs.markers = []
+        let html = try HTMLRenderer(styler: PlainStyler()).render(resolved(sections: [rs], files: [file]))
+        #expect(html.contains("<a href=\"https://example.com/docs\"><code>resync()</code></a>"))
+        #expect(!html.contains("class=\"cl\""))
+    }
+
+    @Test func overlappingMarkerAndLinkKeepBothIds() {
+        let html = HTML.line("let skew", runs: [], marks: [
+            HTML.LineMark(bytes: 0..<8, id: "m", number: 1), HTML.LineMark(bytes: 4..<8, id: "c", number: nil),
+        ])
+        #expect(html.contains("<span class=\"mkt mk-c0 clt\" data-mk=\"m\" data-cl=\"c\" id=\"clt-c\">skew</span>"))
+    }
 }
+

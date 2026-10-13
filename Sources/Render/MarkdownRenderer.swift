@@ -133,7 +133,7 @@ struct MarkdownExport {
     /// The prose with each `{@ …}` replaced by its circled number.
     static func circlingMarkers(_ markdown: String) -> String {
         var out = markdown
-        let markers = MarkerSyntax.scan(markdown).filter { if case .codeSpan = $0.kind { false } else { true } }
+        let markers = MarkerSyntax.scan(markdown).filter { if case .marker = $0.kind { true } else { false } }
         for (i, occurrence) in markers.enumerated().reversed() { out.replaceSubrange(occurrence.range, with: circled(i + 1)) }
         return out
     }

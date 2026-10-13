@@ -162,13 +162,14 @@ a.cl.on code, .clt.on { background:color-mix(in srgb, var(--accent) 24%, transpa
 
   // Markers (data-mk) and code links (data-cl) pair an element in the prose with one in the code: hovering either
   // lights up both, and a click scrolls to the partner, which may be far down the code column.
-  function partners(attr, id) { return document.querySelectorAll("[" + attr + "=\"" + id + "\"]"); }
+  function partners(attr, id) { return document.querySelectorAll("[" + attr + "~=\"" + id + "\"]"); }
   ["data-mk", "data-cl"].forEach(function (attr) {
     var els = document.querySelectorAll("[" + attr + "]");
     for (var i = 0; i < els.length; i++) (function (el) {
-      var id = el.getAttribute(attr);
-      el.addEventListener("mouseenter", function () { partners(attr, id).forEach(function (p) { p.classList.add("on"); }); });
-      el.addEventListener("mouseleave", function () { partners(attr, id).forEach(function (p) { p.classList.remove("on"); }); });
+      var ids = el.getAttribute(attr).split(" ");
+      function light(on) { ids.forEach(function (id) { partners(attr, id).forEach(function (p) { p.classList.toggle("on", on); }); }); }
+      el.addEventListener("mouseenter", function () { light(true); });
+      el.addEventListener("mouseleave", function () { light(false); });
       if (el.tagName !== "A") return;
       el.addEventListener("click", function (event) {
         var target = document.getElementById(el.getAttribute("href").slice(1));

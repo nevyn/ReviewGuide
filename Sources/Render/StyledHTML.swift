@@ -77,15 +77,18 @@ enum HTML {
             }
             let run = clampedRuns.last { $0.start <= start && end <= $0.end && $0.end > $0.start }?.run
             var classes = run.flatMap { classes(capture: $0.capture, changed: $0.changed) }.map { [$0] } ?? []
+            // Every covering mark applies; ids are space-separated so that the page script matches each with ~=.
+            let covering = clampedMarks.filter { $0.start <= start && end <= $0.end }
+            let markers = covering.filter { $0.mark.number != nil }, links = covering.filter { $0.mark.number == nil }
             var attributes = ""
-            if let m = clampedMarks.first(where: { $0.start <= start && end <= $0.end }) {
-                if let n = m.mark.number {
-                    classes += ["mkt", markerColor(n)]
-                    attributes = " data-mk=\"\(escape(m.mark.id))\""
-                } else {
-                    classes.append("clt")
-                    attributes = " data-cl=\"\(escape(m.mark.id))\"" + (m.start == start ? " id=\"clt-\(escape(m.mark.id))\"" : "")
-                }
+            if let first = markers.first, let n = first.mark.number {
+                classes += ["mkt", markerColor(n)]
+                attributes += " data-mk=\"\(escape(markers.map(\.mark.id).joined(separator: " ")))\""
+            }
+            if !links.isEmpty {
+                classes.append("clt")
+                attributes += " data-cl=\"\(escape(links.map(\.mark.id).joined(separator: " ")))\""
+                if let opening = links.first(where: { $0.start == start }) { attributes += " id=\"clt-\(escape(opening.mark.id))\"" }
             }
             if classes.isEmpty && attributes.isEmpty {
                 out += slice(start..<end)

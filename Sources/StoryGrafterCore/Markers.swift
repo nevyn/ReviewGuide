@@ -48,26 +48,36 @@ public enum MarkerSyntax {
     public static func scan(_ markdown: String) -> [MarkerOccurrence] {
         var found: [MarkerOccurrence] = []
         var fence: (char: Character, count: Int)?
+        var block: Range<String.Index>?  // consecutive prose lines, where a code span may continue across a line break
+        func flush() {
+            if let b = block { scanInline(markdown[b], into: &found) }
+            block = nil
+        }
         var lineStart = markdown.startIndex
         while lineStart < markdown.endIndex {
             let lineEnd = markdown[lineStart...].firstIndex(of: "\n") ?? markdown.endIndex
             let line = markdown[lineStart..<lineEnd]
-            let trimmed = line.drop { $0 == " " }
+            // Fences count at any indentation: inside list items cmark accepts them indented by the item's width.
+            let trimmed = line.drop { $0 == " " || $0 == "\t" }
             if let f = fence {
                 let run = trimmed.prefix { $0 == f.char }.count
                 if run >= f.count, trimmed.dropFirst(run).allSatisfy(\.isWhitespace) { fence = nil }
-            } else if let c = trimmed.first, c == "`" || c == "~", line.count - trimmed.count < 4 {
-                let run = trimmed.prefix { $0 == c }.count
-                if run >= 3 { fence = (c, run) } else { scanInline(line, into: &found) }
+            } else if let c = trimmed.first, c == "`" || c == "~", trimmed.prefix(while: { $0 == c }).count >= 3,
+                      c == "~" || !trimmed.dropFirst(3).contains("`") {
+                flush()
+                fence = (c, trimmed.prefix { $0 == c }.count)
+            } else if trimmed.isEmpty {
+                flush()
             } else {
-                scanInline(line, into: &found)
+                block = (block?.lowerBound ?? lineStart)..<lineEnd
             }
             lineStart = lineEnd < markdown.endIndex ? markdown.index(after: lineEnd) : lineEnd
         }
+        flush()
         return found
     }
 
-    /// Code spans close on a backtick run of the same length, per CommonMark; spans don't cross lines here.
+    /// Code spans close on a backtick run of the same length, per CommonMark, and may cross line breaks within a block.
     private static func scanInline(_ line: Substring, into found: inout [MarkerOccurrence]) {
         var i = line.startIndex
         while i < line.endIndex {
@@ -86,7 +96,7 @@ public enum MarkerSyntax {
                     }
                 }
                 guard let close else { i = afterOpen; continue }
-                var content = String(line[afterOpen..<close.lowerBound])
+                var content = String(line[afterOpen..<close.lowerBound]).replacingOccurrences(of: "\n", with: " ")
                 if content.count > 1, content.first == " ", content.last == " ", content.contains(where: { $0 != " " }) {
                     content = String(content.dropFirst().dropLast())
                 }
@@ -132,12 +142,19 @@ public enum MarkerSyntax {
         skipSpaces()
         var path: String?
         if i < line.endIndex, line[i] != "\"" {
-            let word = line[i...].prefix { $0 != " " && $0 != "}" }
+            let word = line[i...].prefix { $0 != " " && $0 != "}" && $0 != "\n" }
             path = String(word)
             i = word.endIndex
             skipSpaces()
         }
-        guard let text = quoted() else { return fail("a marker is {@ \"text\"} or {@ path \"text\"}") }
+        guard var text = quoted() else { return fail("a marker is {@ \"text\"} or {@ path \"text\"}") }
+        skipSpaces()
+        if path == nil, i < line.endIndex, line[i] == "\"" {
+            // {@ "My File.swift" "text"}: the first quoted string was a path with spaces.
+            guard let second = quoted() else { return fail("a marker is {@ \"text\"} or {@ path \"text\"}") }
+            path = text
+            text = second
+        }
         if text.isEmpty { return fail("the marker's text is empty") }
         skipSpaces()
         guard i < line.endIndex, line[i] == "}" else { return fail("the marker has no closing }") }
@@ -149,6 +166,7 @@ public enum MarkerSyntax {
 extension Resolver {
     /// Resolves the markers and code links of one section against the code it shows.
     static func markers(for section: Section, code: [ShownCode]) -> (markers: [Marker], links: [String: CodeTarget], problems: [StoryProblem]) {
+        let corpus = ShownLines(code)
         var markers: [Marker] = []
         var links: [String: CodeTarget] = [:]
         var problems: [StoryProblem] = []
@@ -157,55 +175,82 @@ extension Resolver {
             case .malformed(let message):
                 problems.append(StoryProblem(sectionID: section.id, selector: occurrence.source, message: message))
             case let .marker(path, text):
-                let hits = matches(of: text, path: path, in: code)
+                let hits = corpus.matches(of: text, path: path, wholeWords: false)
                 if hits.count == 1 {
                     markers.append(Marker(number: markers.count + 1, target: hits[0]))
                 } else {
                     let place = path.map { "'\($0)' in " } ?? ""
                     let message = hits.isEmpty
                         ? "\"\(text)\" is in no \(place)code that this section shows"
-                        : "\"\(text)\" is in \(hits.count) places in the \(place)code that this section shows (\(describe(hits, in: code))); give a path or more of the text"
+                        : "\"\(text)\" is in \(hits.count) places in the \(place)code that this section shows (\(corpus.describe(hits))); give a path or more of the text"
                     problems.append(StoryProblem(sectionID: section.id, selector: occurrence.source, message: message))
                     markers.append(Marker(number: markers.count + 1, target: nil))
                 }
             case .codeSpan(let text):
                 guard links[text] == nil, text.count >= 3, text.contains(where: { $0.isLetter || $0.isNumber }) else { continue }
-                var hits = matches(of: text, path: nil, in: code)
-                if hits.isEmpty, text.hasSuffix("()") { hits = matches(of: String(text.dropLast()), path: nil, in: code) }
+                var hits = corpus.matches(of: text, path: nil, wholeWords: true)
+                if hits.isEmpty, text.hasSuffix("()") { hits = corpus.matches(of: String(text.dropLast()), path: nil, wholeWords: true) }
                 if hits.count == 1 { links[text] = hits[0] }
             }
         }
         return (markers, links, problems)
     }
+}
 
-    /// Distinct places where `text` occurs in the shown code: the new side (context and added lines) when it occurs
-    /// there at all, else deleted lines. Hunks shown twice count once, at their first showing.
-    static func matches(of text: String, path: String?, in code: [ShownCode]) -> [CodeTarget] {
-        var newSide: [CodeTarget] = [], oldSide: [CodeTarget] = []
+/// A section's shown code lines, each encoded to UTF-8 once, for repeated searches.
+struct ShownLines {
+    struct Line {
+        var target: (code: Int, line: Int)
+        var path: String
+        var kind: LineKind
+        var bytes: [UInt8]
+        var label: String
+    }
+
+    var lines: [Line] = []
+
+    /// Hunks shown twice count once, at their first showing.
+    init(_ code: [ShownCode]) {
         var seen = Set<String>()
         for (index, item) in code.enumerated() {
-            guard case let .hunk(file, hunk, lines, _) = item else { continue }
-            if let path, file.path != path, !file.path.hasSuffix("/" + path) { continue }
-            for l in lines where hunk.lines.indices.contains(l) {
+            guard case let .hunk(file, hunk, shown, _) = item else { continue }
+            let name = (file.path as NSString).lastPathComponent
+            for l in shown where hunk.lines.indices.contains(l) && seen.insert("\(file.path)#\(hunk.number):\(l)").inserted {
                 let line = hunk.lines[l]
-                let bytes = Array(line.text.utf8), needle = Array(text.utf8)
-                guard needle.count <= bytes.count else { continue }
-                for start in 0...(bytes.count - needle.count) where bytes[start..<(start + needle.count)].elementsEqual(needle) {
-                    guard seen.insert("\(file.path)#\(hunk.number):\(l):\(start)").inserted else { continue }
-                    let target = CodeTarget(code: index, line: l, bytes: start..<(start + needle.count))
-                    if line.kind == .del { oldSide.append(target) } else { newSide.append(target) }
+                let number = line.new.map(String.init) ?? "-\(line.old.map(String.init) ?? "?")"
+                lines.append(Line(target: (index, l), path: file.path, kind: line.kind, bytes: Array(line.text.utf8), label: "\(name) \(number)"))
+            }
+        }
+    }
+
+    /// Distinct places where `text` occurs: on the new side (context and added lines) when it occurs there at all,
+    /// else on deleted lines. With `wholeWords`, a match that starts or ends with an identifier character must not
+    /// continue an identifier, so `clock` does not match inside `clockRate`.
+    func matches(of text: String, path: String?, wholeWords: Bool) -> [CodeTarget] {
+        let needle = Array(text.utf8)
+        guard !needle.isEmpty else { return [] }
+        func isWord(_ b: UInt8) -> Bool { b == UInt8(ascii: "_") || b >= 0x80 || (b >= 0x30 && b <= 0x39) || ((b | 0x20) >= 0x61 && (b | 0x20) <= 0x7A) }
+        var newSide: [CodeTarget] = [], oldSide: [CodeTarget] = []
+        for line in lines {
+            if let path, line.path != path, !line.path.hasSuffix("/" + path) { continue }
+            let bytes = line.bytes
+            guard needle.count <= bytes.count else { continue }
+            for start in 0...(bytes.count - needle.count) where bytes[start..<(start + needle.count)].elementsEqual(needle) {
+                let end = start + needle.count
+                if wholeWords {
+                    if isWord(needle[0]), start > 0, isWord(bytes[start - 1]) { continue }
+                    if isWord(needle[needle.count - 1]), end < bytes.count, isWord(bytes[end]) { continue }
                 }
+                let target = CodeTarget(code: line.target.code, line: line.target.line, bytes: start..<end)
+                if line.kind == .del { oldSide.append(target) } else { newSide.append(target) }
             }
         }
         return newSide.isEmpty ? oldSide : newSide
     }
 
-    private static func describe(_ hits: [CodeTarget], in code: [ShownCode]) -> String {
+    func describe(_ hits: [CodeTarget]) -> String {
         hits.prefix(5).map { t in
-            guard case let .hunk(file, hunk, _, _) = code[t.code] else { return "?" }
-            let line = hunk.lines[t.line]
-            let name = (file.path as NSString).lastPathComponent
-            return "\(name) \(line.new.map(String.init) ?? "-\(line.old.map(String.init) ?? "?")")"
+            lines.first { $0.target.code == t.code && $0.target.line == t.line }?.label ?? "?"
         }.joined(separator: ", ") + (hits.count > 5 ? ", …" : "")
     }
 }

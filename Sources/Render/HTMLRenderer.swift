@@ -102,8 +102,7 @@ struct Page {
     }
 
     /// The marks that a section lays over line `line` of its code item `code`.
-    static func marks(_ rs: ResolvedSection, code: Int) -> [Int: [HTML.LineMark]] {
-        let ids = ids(rs)
+    static func marks(_ rs: ResolvedSection, ids: (markers: [String], links: [String: String]), code: Int) -> [Int: [HTML.LineMark]] {
         var marks: [Int: [HTML.LineMark]] = [:]
         for (i, marker) in rs.markers.enumerated() {
             guard let t = marker.target, t.code == code else { continue }
@@ -135,7 +134,7 @@ struct Page {
         }
         var out = "<section id=\"\(HTML.escape(s.id))\">\n\(storyColumn(s, resolved: rs))<div class=\"code\">\n"
         out += rs.code.isEmpty ? "<div class=\"empty\">No code selected.</div>\n"
-            : rs.code.enumerated().map { shownCode($1, marks: Self.marks(rs, code: $0)) }.joined()
+            : rs.code.enumerated().map { [ids = Self.ids(rs)] in shownCode($1, marks: Self.marks(rs, ids: ids, code: $0)) }.joined()
         return out + "</div>\n</section>\n"
     }
 

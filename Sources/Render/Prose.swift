@@ -33,7 +33,7 @@ final class Prose {
     /// The HTML of `markdown`, followed by a numbered list of the footnotes it references.
     func render(_ markdown: String, in scope: Scope) -> String {
         var source = markdown
-        let markers = MarkerSyntax.scan(markdown).filter { if case .codeSpan = $0.kind { false } else { true } }
+        let markers = MarkerSyntax.scan(markdown).filter { if case .marker = $0.kind { true } else { false } }
         for (i, occurrence) in markers.enumerated().reversed() {
             source.replaceSubrange(occurrence.range, with: Self.placeholder(i + 1))
         }

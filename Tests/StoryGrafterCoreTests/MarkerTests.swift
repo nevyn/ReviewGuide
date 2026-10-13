@@ -86,4 +86,29 @@ private func analyze(_ body: String, selectors: [String] = ["Station.swift", "Dr
         let r = Resolver.analyze(try StoryParser.parse(text, url: URL(fileURLWithPath: "/tmp/s.md")), against: diff)
         #expect(r.problems.map(\.sectionID) == ["summary", "notes"])
     }
+
+    @Test func codeLinksMatchWholeIdentifiersOnly() throws {
+        let r = try analyze("`Drif` and `offset` and `resync`.")
+        let links = r.resolved.sections[0].codeLinks
+        #expect(links["Drif"] == nil)
+        #expect(links["offset"]?.line == 2)
+        #expect(links["resync"]?.line == 0)
+    }
+
+    @Test func quotedPathsAndListFencesAndMultilineSpans() {
+        let found = MarkerSyntax.scan("""
+        A {@ "My File.swift" "skew"} marker.
+        - item
+            ```
+            {@ "in a list fence"}
+            ```
+        A code span `that wraps
+        {@ "x"}` across lines.
+        """)
+        #expect(found.map(\.kind) == [
+            .marker(path: "My File.swift", text: "skew"),
+            .codeSpan("that wraps {@ \"x\"}"),
+        ])
+    }
 }
+
