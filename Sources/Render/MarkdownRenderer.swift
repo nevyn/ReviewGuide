@@ -50,9 +50,13 @@ struct MarkdownExport {
         }
         for rs in resolved.sections {
             out += heading(rs.section)
-            let body = prose(rs.section.body, sectionID: rs.section.id)
+            let body = prose(Self.circlingMarkers(rs.section.body), sectionID: rs.section.id)
             if !body.isEmpty { out += body + "\n\n" }
-            for code in rs.code { out += shownCode(code) }
+            for (i, code) in rs.code.enumerated() {
+                var notes: [Int: [Int]] = [:]
+                for marker in rs.markers where marker.target?.code == i { notes[marker.target!.line, default: []].append(marker.number) }
+                out += shownCode(code, markers: notes)
+            }
         }
         if !story.appendix.isEmpty {
             out += "# Appendix\n\n"
@@ -121,7 +125,21 @@ struct MarkdownExport {
         return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func shownCode(_ code: ShownCode) -> String {
+    /// ① for marker 1 up to ⑳, then (21).
+    static func circled(_ n: Int) -> String {
+        n >= 1 && n <= 20 ? String(UnicodeScalar(0x2460 + n - 1)!) : "(\(n))"
+    }
+
+    /// The prose with each `{@ …}` replaced by its circled number.
+    static func circlingMarkers(_ markdown: String) -> String {
+        var out = markdown
+        let markers = MarkerSyntax.scan(markdown).filter { if case .codeSpan = $0.kind { false } else { true } }
+        for (i, occurrence) in markers.enumerated().reversed() { out.replaceSubrange(occurrence.range, with: circled(i + 1)) }
+        return out
+    }
+
+    /// `markers` maps a hunk line index to the numbers of the markers that point at it.
+    private func shownCode(_ code: ShownCode, markers: [Int: [Int]] = [:]) -> String {
         switch code {
         case let .fileChange(file, again):
             return "\(Self.inlineCode(file.path)): \(Page.fileChangeText(file))\(again ? " (again)" : "")\n\n"
@@ -129,9 +147,11 @@ struct MarkdownExport {
             let shown = lines.clamped(to: hunk.lines.indices)
             var body = ["@@ -\(hunk.oldStart),\(hunk.oldCount) +\(hunk.newStart),\(hunk.newCount) @@" + (hunk.header.isEmpty ? "" : " \(hunk.header)")]
             if shown.lowerBound > 0 { body.append("\u{22EF}") }
-            for line in hunk.lines[shown] {
+            for i in shown {
+                let line = hunk.lines[i]
                 let sign = switch line.kind { case .add: "+"; case .del: "-"; case .context: " " }
-                body.append(sign + line.text)
+                let note = markers[i].map { "  \u{2190} " + $0.map(Self.circled).joined(separator: " ") } ?? ""
+                body.append(sign + line.text + note)
             }
             if shown.upperBound < hunk.lines.count { body.append("\u{22EF}") }
             let text = body.joined(separator: "\n")

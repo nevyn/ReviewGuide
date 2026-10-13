@@ -82,6 +82,7 @@ final class CMarkDocument {
     }
 
     func codeBlocks() -> [CMarkNode] { nodes(where: { cmark_node_get_type($0) == CMARK_NODE_CODE_BLOCK }) }
+    func codeSpans() -> [CMarkNode] { nodes(where: { cmark_node_get_type($0) == CMARK_NODE_CODE }) }
 
     /// 1-based story lines that `node` spans, inclusive.
     func lines(of node: CMarkNode) -> ClosedRange<Int> {

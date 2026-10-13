@@ -94,23 +94,48 @@ struct Page {
         return links.joined(separator: "\n")
     }
 
-    private func storyColumn(_ s: Section) -> String {
+    /// Ids shared by each marker and code link in a section's prose and their targets in its code.
+    static func ids(_ rs: ResolvedSection) -> (markers: [String], links: [String: String]) {
+        let markers = rs.markers.map { "mk-\(rs.section.id)-\($0.number)" }
+        let links = Dictionary(uniqueKeysWithValues: rs.codeLinks.keys.sorted().enumerated().map { ($1, "cl-\(rs.section.id)-\($0)") })
+        return (markers, links)
+    }
+
+    /// The marks that a section lays over line `line` of its code item `code`.
+    static func marks(_ rs: ResolvedSection, code: Int) -> [Int: [HTML.LineMark]] {
+        let ids = ids(rs)
+        var marks: [Int: [HTML.LineMark]] = [:]
+        for (i, marker) in rs.markers.enumerated() {
+            guard let t = marker.target, t.code == code else { continue }
+            marks[t.line, default: []].append(.init(bytes: t.bytes, id: ids.markers[i], number: marker.number))
+        }
+        for (text, t) in rs.codeLinks where t.code == code {
+            guard let id = ids.links[text] else { continue }
+            marks[t.line, default: []].append(.init(bytes: t.bytes, id: id, number: nil))
+        }
+        return marks
+    }
+
+    private func storyColumn(_ s: Section, resolved rs: ResolvedSection? = nil) -> String {
         let id = HTML.escape(s.id)
         var out = "<div class=\"story\"><div class=\"sticky\">\n"
         if let kicker = s.kicker { out += "<div class=\"kicker\">\(HTML.escape(kicker))</div>\n" }
         out += "<h2><input type=\"checkbox\" class=\"reviewed\" data-section=\"\(id)\" title=\"Reviewed\" aria-label=\"Reviewed\">"
         out += "<a class=\"self\" href=\"#\(id)\">\(HTML.escape(s.title))</a></h2>\n"
-        out += "<div class=\"prose\">\(prose.render(s.body, in: .init(anchor: s.id, sectionID: s.id)))</div>\n"
+        let ids = rs.map(Self.ids)
+        let scope = Prose.Scope(anchor: s.id, sectionID: s.id, markerIDs: ids?.markers ?? [], linkIDs: ids?.links ?? [:])
+        out += "<div class=\"prose\">\(prose.render(s.body, in: scope))</div>\n"
         return out + "</div></div>\n"
     }
 
     private func section(_ rs: ResolvedSection) -> String {
         let s = rs.section
         guard s.selectors != nil else {
-            return "<section id=\"\(HTML.escape(s.id))\" class=\"full\">\n\(storyColumn(s))</section>\n"
+            return "<section id=\"\(HTML.escape(s.id))\" class=\"full\">\n\(storyColumn(s, resolved: rs))</section>\n"
         }
-        var out = "<section id=\"\(HTML.escape(s.id))\">\n\(storyColumn(s))<div class=\"code\">\n"
-        out += rs.code.isEmpty ? "<div class=\"empty\">No code selected.</div>\n" : rs.code.map(shownCode).joined()
+        var out = "<section id=\"\(HTML.escape(s.id))\">\n\(storyColumn(s, resolved: rs))<div class=\"code\">\n"
+        out += rs.code.isEmpty ? "<div class=\"empty\">No code selected.</div>\n"
+            : rs.code.enumerated().map { shownCode($1, marks: Self.marks(rs, code: $0)) }.joined()
         return out + "</div>\n</section>\n"
     }
 
@@ -118,10 +143,10 @@ struct Page {
         "<section id=\"\(HTML.escape(s.id))\" class=\"full appendix\">\n\(storyColumn(s))</section>\n"
     }
 
-    private func shownCode(_ code: ShownCode) -> String {
+    private func shownCode(_ code: ShownCode, marks: [Int: [HTML.LineMark]] = [:]) -> String {
         switch code {
         case let .hunk(file, hunk, lines, again):
-            return hunkCard(file: file, hunk: hunk, lines: lines, again: again)
+            return hunkCard(file: file, hunk: hunk, lines: lines, again: again, marks: marks)
         case let .fileChange(file, again):
             var out = "<div class=\"hunk filechange\(again ? " again" : "")\">\n\(fileHeader(file, extra: again ? againNote(placedBy(fileChangeOf: file)) : ""))"
             out += "<div class=\"fc\">\(HTML.escape(Self.fileChangeText(file)))</div>\n"
@@ -157,7 +182,7 @@ struct Page {
         return out + extra + "</div>\n"
     }
 
-    private func hunkCard(file: DiffFile, hunk: Hunk, lines: Range<Int>, again: Bool) -> String {
+    private func hunkCard(file: DiffFile, hunk: Hunk, lines: Range<Int>, again: Bool, marks: [Int: [HTML.LineMark]]) -> String {
         let shown = lines.clamped(to: hunk.lines.indices)
         let extra = again ? againNote(placedBy(file: file, hunk: hunk, lines: shown)) : ""
         var out = "<div class=\"hunk\(again ? " again" : "")\">\n\(fileHeader(file, extra: extra))"
@@ -168,7 +193,7 @@ struct Page {
         if shown.lowerBound > 0 { out += gap }
         for i in shown {
             let line = hunk.lines[i]
-            let code = HTML.line(line.text, runs: i < styles.count ? styles[i] : [])
+            let code = HTML.line(line.text, runs: i < styles.count ? styles[i] : [], marks: marks[i] ?? [])
             let (cls, sign) = switch line.kind {
             case .add: (" class=\"add\"", "+")
             case .del: (" class=\"del\"", "\u{2212}")

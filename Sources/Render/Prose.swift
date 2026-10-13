@@ -21,12 +21,29 @@ final class Prose {
         var anchor: String
         /// `nil` for the summary.
         var sectionID: String?
+        /// Marker n's id in the page is `markerIDs[n - 1]`; empty outside section prose.
+        var markerIDs: [String] = []
+        /// Code span text to the id shared with its target in the code.
+        var linkIDs: [String: String] = [:]
     }
+
+    /// Stands in for marker n while cmark renders, so that Markdown never touches `{@ …}`.
+    private static func placeholder(_ n: Int) -> String { "\u{E000}\(n)\u{E001}" }
 
     /// The HTML of `markdown`, followed by a numbered list of the footnotes it references.
     func render(_ markdown: String, in scope: Scope) -> String {
-        let doc = CMarkDocument(markdown, footnotes: true)
+        var source = markdown
+        let markers = MarkerSyntax.scan(markdown).filter { if case .codeSpan = $0.kind { false } else { true } }
+        for (i, occurrence) in markers.enumerated().reversed() {
+            source.replaceSubrange(occurrence.range, with: Self.placeholder(i + 1))
+        }
+        let doc = CMarkDocument(source, footnotes: true)
         renderBlocks(doc, in: scope)
+        for node in doc.codeSpans() {
+            let text = doc.literal(node)
+            guard let id = scope.linkIDs[text] else { continue }
+            doc.replace(node, withHTML: "<a class=\"cl\" href=\"#clt-\(HTML.escape(id))\" data-cl=\"\(HTML.escape(id))\"><code>\(HTML.escape(text))</code></a>", block: false)
+        }
         var notes: [(number: Int, label: String)] = []
         var refCounts: [Int: Int] = [:]
         for (label, node) in doc.footnoteReferences {
@@ -44,6 +61,10 @@ final class Prose {
             doc.replace(node, withHTML: html, block: false)
         }
         var out = doc.html()
+        for n in markers.indices.map({ $0 + 1 }) {
+            let circle = n <= scope.markerIDs.count ? HTML.markerCircle(id: scope.markerIDs[n - 1], number: n, inCode: false) : "\(n)"
+            out = out.replacingOccurrences(of: Self.placeholder(n), with: circle)
+        }
         if !notes.isEmpty {
             out += "<ol class=\"notes\">\n"
             for (n, label) in notes {

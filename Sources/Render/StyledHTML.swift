@@ -32,9 +32,29 @@ enum HTML {
         return classes.isEmpty ? nil : classes.joined(separator: " ")
     }
 
-    /// One escaped line with a `<span>` per styled run. Runs are UTF-8 byte ranges; bounds outside the line are
-    /// clamped and bounds inside a multi-byte scalar move back to its first byte. Uncovered bytes render unstyled.
-    static func line(_ text: String, runs: StyledLine) -> String {
+    /// A highlight laid over part of a code line: a marker's token, or the target of a code link.
+    struct LineMark {
+        /// UTF-8 byte range in the line.
+        var bytes: Range<Int>
+        /// Shared with the partner in the prose, such as `mk-a-2` or `cl-a-0`.
+        var id: String
+        /// A marker's number, which draws its circle before the token; `nil` for a code link's target.
+        var number: Int?
+    }
+
+    /// The colour class of marker `number`; six colours cycle.
+    static func markerColor(_ number: Int) -> String { "mk-c\((number - 1) % 6)" }
+
+    /// The numbered circle that pairs a marker in the prose with its token in the code. Each links to the other.
+    static func markerCircle(id: String, number: Int, inCode: Bool) -> String {
+        let (own, other) = inCode ? ("mkt-", "mkp-") : ("mkp-", "mkt-")
+        return "<a class=\"mk \(markerColor(number))\" id=\"\(own)\(escape(id))\" href=\"#\(other)\(escape(id))\" data-mk=\"\(escape(id))\">\(number)</a>"
+    }
+
+    /// One escaped line with a `<span>` per styled run, and marks laid over it. Runs and marks are UTF-8 byte ranges;
+    /// bounds outside the line are clamped and bounds inside a multi-byte scalar move back to its first byte. The line
+    /// is cut at every run and mark boundary, so spans never nest. Uncovered bytes render unstyled.
+    static func line(_ text: String, runs: StyledLine, marks: [LineMark] = []) -> String {
         let bytes = Array(text.utf8)
         func boundary(_ i: Int) -> Int {
             var i = min(max(i, 0), bytes.count)
@@ -42,21 +62,37 @@ enum HTML {
             return i
         }
         func slice(_ r: Range<Int>) -> String { escape(String(decoding: bytes[r], as: UTF8.self)) }
+        let clampedRuns = runs.map { (start: boundary($0.bytes.lowerBound), end: boundary($0.bytes.upperBound), run: $0) }
+        let clampedMarks = marks.map { (start: boundary($0.bytes.lowerBound), end: boundary($0.bytes.upperBound), mark: $0) }
+            .filter { $0.end > $0.start }
+        var cuts = Set([0, bytes.count])
+        for r in clampedRuns { cuts.insert(r.start); cuts.insert(r.end) }
+        for m in clampedMarks { cuts.insert(m.start); cuts.insert(m.end) }
+        let points = cuts.sorted()
+
         var out = ""
-        var cursor = 0
-        for run in runs {
-            let start = max(boundary(run.bytes.lowerBound), cursor)
-            let end = boundary(run.bytes.upperBound)
-            guard end > start else { continue }
-            if start > cursor { out += slice(cursor..<start) }
-            if let cls = classes(capture: run.capture, changed: run.changed) {
-                out += "<span class=\"\(escape(cls))\">\(slice(start..<end))</span>"
-            } else {
-                out += slice(start..<end)
+        for (start, end) in zip(points, points.dropFirst()) where end > start {
+            for m in clampedMarks where m.start == start {
+                if let n = m.mark.number { out += markerCircle(id: m.mark.id, number: n, inCode: true) }
             }
-            cursor = end
+            let run = clampedRuns.last { $0.start <= start && end <= $0.end && $0.end > $0.start }?.run
+            var classes = run.flatMap { classes(capture: $0.capture, changed: $0.changed) }.map { [$0] } ?? []
+            var attributes = ""
+            if let m = clampedMarks.first(where: { $0.start <= start && end <= $0.end }) {
+                if let n = m.mark.number {
+                    classes += ["mkt", markerColor(n)]
+                    attributes = " data-mk=\"\(escape(m.mark.id))\""
+                } else {
+                    classes.append("clt")
+                    attributes = " data-cl=\"\(escape(m.mark.id))\"" + (m.start == start ? " id=\"clt-\(escape(m.mark.id))\"" : "")
+                }
+            }
+            if classes.isEmpty && attributes.isEmpty {
+                out += slice(start..<end)
+            } else {
+                out += "<span class=\"\(escape(classes.joined(separator: " ")))\"\(attributes)>\(slice(start..<end))</span>"
+            }
         }
-        if cursor < bytes.count { out += slice(cursor..<bytes.count) }
         return out
     }
 
