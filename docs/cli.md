@@ -6,9 +6,10 @@
 |---|---|
 | `storygrafter list [--json]` | Prints the diff's files and hunks. With a story, it also shows where each changed line is placed. |
 | `storygrafter check` | Resolves the story against the diff and reports every coverage and selector error. Writes nothing. |
-| `storygrafter build [--format html\|md] [--out FILE] [--upload]` | Checks, then writes the review guide. With `--upload`, it runs the upload command and prints the URL as the last line of stdout. |
+| `storygrafter build [--format html\|md] [--out FILE] [--upload]` | Checks, then writes the review guide and prints its path. The file is the deliverable. With `--upload`, it also runs the upload command and prints the URL as the last line of stdout. |
 | `storygrafter upload FILE` | Runs the upload command on `FILE` and prints the URL. |
-| `storygrafter paths` | Prints the default story and output paths for the current branch. |
+| `storygrafter paths` | Prints the default story and output paths for the current branch, creating their directory. |
+| `storygrafter format` | Prints the story format specification for the installed version. |
 
 Common options: `--repo PATH` (default `.`), `--range RANGE` (overrides the story's `range`), `--story FILE`.
 
@@ -63,7 +64,7 @@ $(git rev-parse --git-common-dir)/review-guides/<branch>.html   # or .guide.md f
 
 ## Configuration
 
-The upload command comes from the `STORYGRAFTER_UPLOAD` environment variable, or else from `upload = …` in `~/.config/storygrafter/config` (lines of `key = value`; `#` starts a comment).
+Uploading is optional: without an upload command, `build` writes the file and the author attaches it to the merge request. The upload command comes from the `STORYGRAFTER_UPLOAD` environment variable, or else from `upload = …` in `~/.config/storygrafter/config` (lines of `key = value`; `#` starts a comment).
 
 The command is a template run by `/bin/sh -c`. `{file}` is replaced with the shell-quoted absolute path of the guide. The URL is the last stdout line that starts with `http://` or `https://`. stderr passes through. A non-zero exit, or no URL, is an upload failure.
 

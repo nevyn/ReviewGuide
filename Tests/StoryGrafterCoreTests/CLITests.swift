@@ -203,5 +203,7 @@ private struct JSONDocument: Decodable {
         #expect(result.status == 0)
         #expect(result.stdout.hasPrefix("story  ") && result.stdout.contains("/.git/review-guides/feature.md"))
         #expect(result.stdout.contains("/.git/review-guides/feature.guide.md"))
+        var isDirectory: ObjCBool = false
+        #expect(FileManager.default.fileExists(atPath: repo.url.appendingPathComponent(".git/review-guides").path, isDirectory: &isDirectory) && isDirectory.boolValue)
     }
 }

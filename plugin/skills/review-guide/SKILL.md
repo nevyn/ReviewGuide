@@ -1,6 +1,6 @@
 ---
 name: review-guide
-description: Write a review guide for the current branch - the story of the change, told from what this session learned while building it, placed next to every changed line - then build it with the storygrafter command and upload it. Use when the author asks for a review guide, a guided walkthrough of their change, or a story to attach to a PR/MR, typically at the end of the session that wrote the code.
+description: Write a review guide for the current branch - the story of the change, told from what this session learned while building it, placed next to every changed line - then build it with the storygrafter command, and upload it when an upload command is configured. Use when the author asks for a review guide, a guided walkthrough of their change, or a story to attach to a PR/MR, typically at the end of the session that wrote the code.
 ---
 
 # review-guide
@@ -9,7 +9,7 @@ A review guide tells the story of a change in sections, each next to the exact d
 
 The guide has two readers: the author, who reviews code that an agent wrote, and the colleagues who review it after them. Write for both. Its value is what this session knows and the diff does not show: why the change exists, the evidence behind it, the approaches that failed, the edge cases found, what was left alone on purpose.
 
-The guide's deliverable is a file and, when an upload command is configured, a URL. Publishing it to a PR or MR is not part of this skill; hand the URL or path back and let the caller decide.
+The guide's deliverable is an HTML file and, only when an upload command is configured, a URL. Publishing it to a PR or MR is not part of this skill; hand the URL or path back and let the caller decide.
 
 ## 0. Preconditions
 
@@ -82,12 +82,12 @@ Exit 1 lists every unplaced line and every bad selector. Fix them all and re-run
 ## 7. Build and hand over
 
 ```bash
-storygrafter build --range <range> --upload   # when an upload command is configured
-storygrafter build --range <range>            # otherwise; prints the path
+storygrafter build --range <range>            # writes the guide and prints its path
+storygrafter build --range <range> --upload   # also uploads, when an upload command is configured
 ```
 
 `--format md` writes a Markdown version for readers who won't open an HTML file. Report to the caller: the guide's path, the URL when uploaded, the suspected bugs and open questions from step 5, and anything left out at the user's request.
 
 ## After every push
 
-Run `storygrafter check` again. Anchors that no longer match and new unplaced lines are listed by name; update those sections, bump `head:`, build and upload again, and hand over the new URL.
+Run `storygrafter check` again. Anchors that no longer match and new unplaced lines are listed by name; update those sections, bump `head:`, build again (and upload, if configured), and hand over the new path or URL.

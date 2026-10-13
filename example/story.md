@@ -1,7 +1,7 @@
 ---
 title: StoryGrafter v1
 meta: The Python prototype becomes a Swift command line, a Homebrew formula and a Claude Code skill
-range: main...HEAD
+range: 4af1844a...v0.1.0
 exclude: ["Grammars/*", "Sources/Highlight/Resources/queries/*", "Tests/Fixtures/*", "Tests/RenderTests/Fixtures/*"]
 ---
 The prototype proved one idea: a reviewer follows a change far more easily when the author's explanation sits next to the code it explains, and when the tool guarantees that the explanation covers every changed line. v1 keeps that idea and rebuilds everything around it. Stories are Markdown, coverage is checked per line, code is highlighted with tree-sitter, and a skill writes the story from what the authoring session learned.
