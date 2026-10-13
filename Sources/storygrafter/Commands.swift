@@ -210,3 +210,56 @@ struct Format: ParsableCommand {
         Console.current.out(try String(contentsOf: url, encoding: .utf8))
     }
 }
+
+struct Prompt: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Prints instructions for a coding agent to write a review guide, with this repository's context.")
+
+    @OptionGroup var options: CommonOptions
+
+    func run() throws {
+        let bundle = ResourceBundle.named("StoryGrafter_storygrafter") ?? Bundle.module
+        guard let url = bundle.url(forResource: "prompt", withExtension: "md") else {
+            throw UsageError("prompt.md is missing from the storygrafter resource bundle")
+        }
+        Console.current.out(context() + "\n" + (try String(contentsOf: url, encoding: .utf8)))
+    }
+
+    /// Facts the agent would otherwise guess. Never throws: outside a repository it says so and the instructions still print.
+    func context() -> String {
+        var lines = ["# Context, computed by storygrafter \(storygrafterVersion)", ""]
+        let git = options.git
+        guard let top = try? git.run(["rev-parse", "--show-toplevel"]).trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return (lines + ["- Not inside a git repository (\(git.repo.path)). Run this again from the repository of the change.", ""])
+                .joined(separator: "\n")
+        }
+        let head = (try? git.run(["rev-parse", "--short=8", "HEAD"]))?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "?"
+        let branch = (try? git.run(["symbolic-ref", "--short", "-q", "HEAD"]))?.trimmingCharacters(in: .whitespacesAndNewlines)
+        lines.append("- Repository: \(top)")
+        lines.append("- Branch: \(branch.map { $0.isEmpty ? "(detached)" : $0 } ?? "(detached)"), HEAD \(head)")
+
+        let paths = try? options.paths()
+        let story = paths.flatMap { FileManager.default.fileExists(atPath: $0.story.path) ? (try? options.loadStory()) : nil }
+        let range = options.resolvedRange(for: story)
+        let rangeSource = options.range != nil ? "from --range" : story?.range != nil ? "from the story's range:"
+            : DiffLoader.originDefaultBranch(git: git) == nil
+                ? "a guess: origin's default branch is unknown; `git remote set-head origin --auto` sets it"
+                : "origin's default branch"
+        lines.append("- Range: \(range) (\(rangeSource))")
+
+        if let paths {
+            let exists = FileManager.default.fileExists(atPath: paths.story.path)
+            lines.append("- Story: \(paths.story.path) (\(exists ? "exists: update it" : "not written yet"))")
+            if paths.location == .temporary {
+                lines.append("  The git directory is not writable here, so the story lives under /tmp until reboot. Commands find it there without --story.")
+            }
+            lines.append("- Guide: \(paths.html.path)")
+        } else {
+            lines.append("- Story: HEAD is detached, so there is no default path; pass --story FILE to every command.")
+        }
+        let upload = (try? Config.load().upload) ?? nil
+        lines.append("- Upload command: " + (upload == nil ? "none configured; publish with the forge's own tools (step 8)."
+                                                           : "configured; `storygrafter build --upload` prints a URL."))
+        return (lines + [""]).joined(separator: "\n")
+    }
+}

@@ -10,8 +10,11 @@
 | `storygrafter upload FILE` | Runs the upload command on `FILE` and prints the URL. |
 | `storygrafter paths` | Prints the default story and output paths for the current branch, creating their directory. |
 | `storygrafter format` | Prints the story format specification for the installed version. |
+| `storygrafter prompt` | Prints instructions for a coding agent to write, check, build and publish a review guide, preceded by this repository's context: branch, head, range, story path, and whether an upload command is configured. |
 
 Common options: `--repo PATH` (default `.`), `--range RANGE` (overrides the story's `range`), `--story FILE`.
+
+The range defaults to `<origin's default branch>...HEAD`, read from `refs/remotes/origin/HEAD`. `git clone` and `git fetch` set that ref, and `git remote set-head origin --auto` repairs it. Without it, the default is `origin/main...HEAD`.
 
 ## Default paths
 
@@ -21,6 +24,8 @@ Stories and guides live in the repository's common git directory, which every wo
 $(git rev-parse --git-common-dir)/review-guides/<branch>.md
 $(git rev-parse --git-common-dir)/review-guides/<branch>.html   # or .guide.md for --format md
 ```
+
+When the common git directory is not writable, as in sandboxed agents, stories and guides live in `/tmp/storygrafter/<repo>-<hash>/<branch>.md` instead, until reboot. A story that already exists in either place wins, so a story written inside a sandbox is found from outside it. `storygrafter paths` and `storygrafter prompt` say which place is in use.
 
 `<branch>` keeps its slashes as subdirectories. A detached HEAD is an error unless `--story` is given. With `--story x/foo.md`, the guide defaults to `x/foo.html` or `x/foo.guide.md`.
 
