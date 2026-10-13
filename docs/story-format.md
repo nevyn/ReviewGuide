@@ -18,7 +18,7 @@ Prose. A claim with a source.[^crash]
 [^crash]: 412 crashes in 9.11, all in `Station.resync()`.
 
 ## Chapter 1 · The new primitive {#primitive}
-Prose.
+Prose, with a marker on the line it explains {@ "let skew"}.
 
 ```hunks
 Sources/Clock/Drift.swift
@@ -107,6 +107,22 @@ The build places every changed line and file change that the selectors pick. It 
 - a `lines` or `to` range falls outside its hunk.
 
 Context lines may appear in several sections without `again`. Blank changed lines (empty or whitespace only) are shown wherever a range includes them but need no placement, because no anchor can name one.
+
+## Markers
+
+A marker points from a sentence to one exact place in the section's code: `{@ "text"}`, or `{@ path "text"}` to name the file. The page shows the same numbered, coloured circle in the prose and just before the text in the code, and underlines the text in the circle's colour. Hovering either circle lights up both, and clicking one scrolls to the other.
+
+```markdown
+The sweep now reads the relationships once {@ "let relationships ="}, not once per entity {@ "[Relationships.self][eid]"}.
+```
+
+- Markers number themselves 1, 2, 3 in reading order within each section.
+- The text must occur exactly once in the code that the section shows. Like anchors, it matches context and added lines, and deleted lines only when the text is nowhere else. `check` reports a marker that matches nothing or several places; a path, or more of the text, narrows it.
+- The path is a repo-relative path or a suffix of one, as in selectors. Quote the text with `\"` and `\\` as escapes.
+- Markers belong in section prose. Markers in the summary, the appendix or a footnote are errors, because those have no code.
+- Markers inside code spans and code blocks are text, not markers.
+
+**Code links** need no markup. An inline code span, such as `` `sweepOrphans` ``, whose text occurs exactly once in the section's code links to it the same way, with a dotted underline and no number. A span ending in `()` also matches the name followed by `(`. Spans of fewer than three characters, and spans that match several places, stay plain.
 
 ## Supplementary reading
 

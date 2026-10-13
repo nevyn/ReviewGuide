@@ -36,6 +36,10 @@ Within each hunk, every run of deleted lines directly followed by a run of added
 2. Pair the deleted and added lines in order: each deleted line takes the best-scoring added line among the next 16 after the previous pair, so pairs never cross. The score is 2 × matching tokens / total tokens, counting non-whitespace tokens only; a pair needs 0.5. Unpaired lines keep plain line colouring.
 3. Diff each pair's token sequences with `CollectionDifference`. Tokens that differ, whitespace included, are marked changed.
 
+## Markers and code links
+
+`Resolver` scans each section's prose with `MarkerSyntax`, which both the resolver and the renderers use, so that all of them agree on which `{@ …}` is marker n. It resolves each marker, and each inline code span, to a `CodeTarget`: an item of the section's code column, a line, and a byte range. `Render` replaces markers with placeholders before cmark sees the prose, and swaps in the circles afterwards. It lays each target over its code line as a mark, cutting the line at mark boundaries as well as at styled-run boundaries.
+
 ## Styled runs
 
 `Highlight` returns, per shown line, a list of non-overlapping runs that cover the line: a UTF-8 byte range, an optional highlight capture name (`keyword`, `string.special`, …), and a changed flag. `Render` turns each run into one `<span>` whose classes are the capture name's components plus `chg`. Because the two layers are merged into flat runs before rendering, spans never nest.
