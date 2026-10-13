@@ -182,12 +182,14 @@ func uploadFile(_ file: URL) throws -> URL {
 }
 
 struct Paths: ParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Prints the default story and output paths for the current branch.")
+    static let configuration = CommandConfiguration(
+        abstract: "Prints the default story and output paths for the current branch, creating their directory.")
 
     @OptionGroup var options: CommonOptions
 
     func run() throws {
         let paths = try options.paths()
+        try FileManager.default.createDirectory(at: paths.story.deletingLastPathComponent(), withIntermediateDirectories: true)
         Console.current.out("story  \(paths.story.path)\nhtml   \(paths.html.path)\nmd     \(paths.markdown.path)")
     }
 }
