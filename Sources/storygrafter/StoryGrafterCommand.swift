@@ -9,7 +9,7 @@ struct StoryGrafterCommand: ParsableCommand {
         abstract: "Builds a review guide: a story about a change, told next to the diff lines it explains.",
         discussion: "Stories are Markdown; `storygrafter format` prints the specification. Exit status: 0 success, 1 the story does not satisfy the diff, 2 usage, git, IO or upload error.",
         version: storygrafterVersion,
-        subcommands: [List.self, Check.self, Build.self, Upload.self, Paths.self, Format.self])
+        subcommands: [List.self, Check.self, Build.self, Upload.self, Paths.self, Format.self, Prompt.self])
 
     static func main() {
         Foundation.exit(run(Array(CommandLine.arguments.dropFirst())))

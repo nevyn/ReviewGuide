@@ -14,31 +14,21 @@ The build enforces **coverage**: every changed line of the diff is placed in exa
 
 StoryGrafter is meant to be run by the coding agent that made the change, at the end of the session. The agent knows what the diff doesn't show: why the change exists, the evidence behind it, the approaches that failed, the edge cases it found. A review guide is where that knowledge lands, next to the code it explains. Writing the guide is also a review: explaining each section forces the agent to check its claims against the code, and that finds bugs.
 
-Install it, then give your agent this prompt:
+Install it, then ask your agent:
 
 ```
-Write a review guide for this branch with `storygrafter` (run `storygrafter --help`).
-
-1. Read the story format with `storygrafter format`. `storygrafter paths` says where the
-   story goes; `storygrafter list` shows every hunk in the diff. Use our merge request's
-   target branch for the range (default origin/main...HEAD).
-2. Tell the story in the order the change makes sense, not file by file: a prologue
-   with the problem in one concrete example, then the core change, then outwards to
-   its callers, and last what the change deliberately leaves alone.
-3. Include what this conversation knows and the diff doesn't: why we made the change,
-   the evidence (tickets, crash reports, logs, payloads), the approaches we tried and
-   dropped and why, and the edge cases we found. Use footnotes for evidence and the
-   appendix for longer research. Paraphrase; never paste conversation text, and strip
-   personal data and secrets from anything you quote.
-4. Explain mechanism and intent, not the diff. Pick each section's code with content
-   anchors so that the code beside the text is what the text is about.
-5. Check every claim against the code while you write. If you find a bug, stop and
-   tell me. Mark anything unsettled with a `> [!QUESTION]` alert.
-6. Run `storygrafter check` until it passes, then `storygrafter build`, and give me
-   the path to the HTML file.
+Run `storygrafter prompt` and follow its instructions to write a review guide for this branch and publish it on the merge request we're working on.
 ```
 
-Attach the HTML file to the merge request the way your forge allows, or let the agent do it. After every push, ask the agent to run `storygrafter check` again, fix what moved, and rebuild.
+`storygrafter prompt` prints this repository's context (branch, range, where the story goes, whether an upload command is configured) and then the instructions: how to tell the story, what to include from the conversation and what to keep out, how to check and build, and how to publish and keep the guide current. The instructions ship with the binary, so they always match the installed version.
+
+To make it routine, add a rule like this to your agent's instructions file (`CLAUDE.md`, `AGENTS.md`):
+
+```
+## Review guides
+- Build a review guide with `storygrafter` when a merge request leaves draft, and again after every push to it: run `storygrafter prompt` and follow it.
+- Publish the HTML with <your forge's upload tool>, and link it from the description under a "Review guide" heading, replacing the previous link.
+```
 
 ## Install
 
@@ -49,6 +39,7 @@ brew install nevyn/tap/storygrafter
 ## Usage
 
 ```sh
+storygrafter prompt                # instructions for your agent, with this repository's context
 storygrafter format                # the story format
 storygrafter paths                 # where the story and the guide for this branch live
 storygrafter list                  # the diff's hunks, and where the story places each one
@@ -56,12 +47,12 @@ storygrafter check                 # every coverage and selector problem, or ok
 storygrafter build                 # write the guide and print its path
 ```
 
-Stories live out of tree, in `.git/review-guides/<branch>.md`, and the guide is written next to them. The range defaults to `origin/main...HEAD`; set `range:` in the story or pass `--range`. `storygrafter list --json` is for agents. The docs are listed in [docs/index.md](docs/index.md).
+Stories live out of tree, in `.git/review-guides/<branch>.md` (or under `/tmp/storygrafter/` where a sandbox makes `.git` read-only), and the guide is written next to them. The range defaults to `<origin's default branch>...HEAD`; set `range:` in the story or pass `--range`. `storygrafter list --json` is for agents. The docs are listed in [docs/index.md](docs/index.md).
 
 ## Optional extras
 
 - **Upload in one step.** Configure an upload command that publishes a file and prints its URL, and `storygrafter build --upload` prints a link to paste into the merge request. See [docs/cli.md](docs/cli.md#configuration).
-- **A Claude Code skill.** The `review-guide` skill carries the prompt above and more: when to mine transcripts, how to handle private data, what to hand back. Add it with `/plugin marketplace add nevyn/StoryGrafter`, then install `storygrafter`.
+- **A Claude Code skill.** The `review-guide` skill lets Claude Code start on its own when you ask for a review guide; it runs `storygrafter prompt`. Add it with `/plugin marketplace add nevyn/StoryGrafter`, then install `storygrafter`.
 
 ## Writing a good story
 

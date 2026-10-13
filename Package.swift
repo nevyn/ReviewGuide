@@ -42,7 +42,7 @@ let package = Package(
         .executableTarget(name: "storygrafter", dependencies: [
             "StoryGrafterCore", "Highlight", "Render",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
-        ], resources: [.copy("Resources/story-format.md")]),
+        ], resources: [.copy("Resources/story-format.md"), .copy("Resources/prompt.md")]),
         .testTarget(name: "StoryGrafterCoreTests", dependencies: ["StoryGrafterCore", "storygrafter"], resources: [.copy("../Fixtures")]),
         .testTarget(name: "HighlightTests", dependencies: ["Highlight"] + grammars.map { .target(name: "TSGrammar\($0.0)") }),
         .testTarget(name: "RenderTests", dependencies: ["Render"], resources: [.copy("Fixtures")]),

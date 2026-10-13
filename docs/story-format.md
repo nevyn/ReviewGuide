@@ -48,8 +48,8 @@ A `---` block at the very top. One `key: value` per line; a value is a bare stri
 |---|---|---|
 | `title` | yes | The page heading. |
 | `meta` | no | One line under the heading. |
-| `range` | no | The git diff range. `--range` overrides it; the default is `origin/main...HEAD`. |
-| `head` | no | The HEAD sha that the story was written against. When it differs from the built HEAD, the build warns on stderr and names both. |
+| `range` | no | The git diff range. `--range` overrides it; the default is `<origin's default branch>...HEAD`. |
+| `head` | no | The HEAD sha that the story was written against. When it differs from the built HEAD, the build warns on stderr and gives the value to set once the story is up to date. |
 | `exclude` | no | Pathspec globs to leave out of the diff. The guide lists each glob and the files it removed. |
 
 Text between the front matter and the first heading is the summary.

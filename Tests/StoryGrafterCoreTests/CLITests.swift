@@ -161,7 +161,8 @@ private struct JSONDocument: Decodable {
         let story = try writeStory(repo, completeStory.replacingOccurrences(of: "range: main...feature\n", with: "range: main...feature\nhead: 0000000\n"))
         let result = run(["check", "--repo", repo.url.path, "--story", story])
         #expect(result.status == 0)
-        #expect(result.stderr.count == 1 && result.stderr[0].hasPrefix("warning: the story was written against 0000000, but the diff's head is "))
+        #expect(result.stderr.count == 1 && result.stderr[0].hasPrefix("warning: the story says head: 0000000, but the diff's head is "))
+        #expect(result.stderr.first?.contains("then set head: ") == true)
     }
 
     @Test(arguments: [["--range", "main"], ["--range", "main..nope"]])
@@ -195,6 +196,26 @@ private struct JSONDocument: Decodable {
         let result = run(["build", "--format", "md", "--repo", repo.url.path, "--story", story, "--out", story])
         #expect(result.status == 2)
         #expect(result.stderr.first?.contains("is the story itself") == true)
+    }
+
+    @Test func promptPrintsContextThenInstructions() throws {
+        let repo = try TempRepo.standard()
+        let result = run(["prompt", "--repo", repo.url.path])
+        #expect(result.status == 0)
+        #expect(result.stdout.hasPrefix("# Context, computed by storygrafter"))
+        #expect(result.stdout.contains("- Branch: feature, HEAD "))
+        #expect(result.stdout.contains("- Range: origin/main...HEAD (a guess: origin's default branch is unknown"))
+        #expect(result.stdout.contains("/.git/review-guides/feature.md (not written yet)"))
+        #expect(result.stdout.contains("# Writing a review guide with storygrafter"))
+    }
+
+    @Test func promptOutsideARepositoryStillPrintsInstructions() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("StoryGrafterTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let result = run(["prompt", "--repo", dir.path])
+        #expect(result.status == 0)
+        #expect(result.stdout.contains("- Not inside a git repository"))
+        #expect(result.stdout.contains("# Writing a review guide with storygrafter"))
     }
 
     @Test func pathsFollowTheBranch() throws {
