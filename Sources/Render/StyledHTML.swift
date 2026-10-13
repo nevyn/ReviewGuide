@@ -76,24 +76,24 @@ enum HTML {
                 if let n = m.mark.number { out += markerCircle(id: m.mark.id, number: n, inCode: true) }
             }
             let run = clampedRuns.last { $0.start <= start && end <= $0.end && $0.end > $0.start }?.run
-            var classes = run.flatMap { classes(capture: $0.capture, changed: $0.changed) }.map { [$0] } ?? []
+            var names = run.flatMap { HTML.classes(capture: $0.capture, changed: $0.changed) }.map { [$0] } ?? []
             // Every covering mark applies; ids are space-separated so that the page script matches each with ~=.
             let covering = clampedMarks.filter { $0.start <= start && end <= $0.end }
             let markers = covering.filter { $0.mark.number != nil }, links = covering.filter { $0.mark.number == nil }
             var attributes = ""
             if let first = markers.first, let n = first.mark.number {
-                classes += ["mkt", markerColor(n)]
+                names += ["mkt", markerColor(n)]
                 attributes += " data-mk=\"\(escape(markers.map(\.mark.id).joined(separator: " ")))\""
             }
             if !links.isEmpty {
-                classes.append("clt")
+                names.append("clt")
                 attributes += " data-cl=\"\(escape(links.map(\.mark.id).joined(separator: " ")))\""
                 if let opening = links.first(where: { $0.start == start }) { attributes += " id=\"clt-\(escape(opening.mark.id))\"" }
             }
-            if classes.isEmpty && attributes.isEmpty {
+            if names.isEmpty && attributes.isEmpty {
                 out += slice(start..<end)
             } else {
-                out += "<span class=\"\(escape(classes.joined(separator: " ")))\"\(attributes)>\(slice(start..<end))</span>"
+                out += "<span class=\"\(escape(names.joined(separator: " ")))\"\(attributes)>\(slice(start..<end))</span>"
             }
         }
         return out
