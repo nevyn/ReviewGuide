@@ -128,6 +128,7 @@ a.cl code { text-decoration:underline dotted color-mix(in srgb, var(--fg) 45%, t
 a.cl.on code, .clt.on { background:color-mix(in srgb, var(--accent) 24%, transparent); }
 @keyframes flash { from { background:color-mix(in srgb, var(--accent) 45%, transparent); } }
 .flash { animation:flash 1.2s ease-out; }
+[id^="mkt-"], [id^="clt-"], [id^="mkp-"] { scroll-margin-top:136px; }
 @media print {
   nav, input.reviewed { display:none; }
   .sticky { position:static; }
@@ -179,7 +180,15 @@ a.cl.on code, .clt.on { background:color-mix(in srgb, var(--accent) 24%, transpa
         var target = document.getElementById(el.getAttribute("href").slice(1));
         if (!target) return;
         event.preventDefault();
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        var row = target.closest("tr");
+        if (row) {
+          // Leave four lines of context above the target, below the sticky nav.
+          var nav = document.querySelector("nav");
+          var above = (nav ? nav.offsetHeight : 0) + 4 * (parseFloat(getComputedStyle(row).lineHeight) || 18);
+          window.scrollTo({ top: Math.max(0, target.getBoundingClientRect().top + window.scrollY - above), behavior: "smooth" });
+        } else {
+          target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
         var flashed = target.closest("tr") || target;
         flashed.classList.remove("flash"); void flashed.offsetWidth; flashed.classList.add("flash");
       });
