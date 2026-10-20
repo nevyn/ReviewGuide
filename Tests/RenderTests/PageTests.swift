@@ -29,8 +29,9 @@ private var stationHunk: Hunk { station.hunks[0] }
 @Test func headerShowsRangeStatAndMeta() throws {
     let html = try renderHTML(resolved(sections: [section("a", code: [.hunk(file: station, hunk: stationHunk, lines: 0..<5, again: false)])]))
     #expect(html.contains("<div class=\"meta\">GL-1 · iOS</div>"))
-    #expect(html.contains("<code>origin/main...HEAD</code> · 1 file, +1 \u{2212}1"))
-    #expect(html.contains("Built from <code>origin/main...HEAD</code> at <code>01234567</code>"))
+    #expect(html.contains("<code title=\"fedcba9876543210..0123456789abcdef\">fedcba98..01234567</code> · 1 file, +1 \u{2212}1"))
+    #expect(html.contains("Built from <code title=\"fedcba9876543210..0123456789abcdef\">fedcba98..01234567</code>"))
+    #expect(!html.contains("HEAD"))
     #expect(html.contains("<body data-head=\"0123456789abcdef\">"))
 }
 
