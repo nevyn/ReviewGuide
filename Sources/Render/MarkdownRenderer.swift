@@ -35,7 +35,7 @@ struct MarkdownExport {
         let diff = resolved.diff
         var out = "# \(story.title)\n\n"
         if let meta = story.meta, !meta.isEmpty { out += "\(meta)\n\n" }
-        out += "\(Self.inlineCode(diff.range)) \u{00B7} \(Page.stat(diff))\n\n"
+        out += "\(Self.inlineCode("\(diff.base)..\(diff.head)")) \u{00B7} \(Page.stat(diff))\n\n"
         if !story.summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             out += prose(story.summary, sectionID: nil) + "\n\n"
         }

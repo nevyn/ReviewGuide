@@ -17,7 +17,7 @@ private let file = DiffFile(path: "Sources/A.swift", status: .modified, hunks: [
     ], appendix: [Section(id: "x", title: "Extra", body: "More.", line: 5)],
        excluded: [Exclusion(pattern: "*.png", files: ["a.png", "b.png"]), Exclusion(pattern: "*.lock", files: [])])
     let md = try MarkdownRenderer().render(story)
-    #expect(md.hasPrefix("# Fix\n\nGL-1 · iOS\n\n`origin/main...HEAD` · 2 files, +1 \u{2212}1\n\nSum.\n\nNot shown:\n\n- `*.png`: 2 files (`a.png`, `b.png`)\n- `*.lock`: 0 files\n\n"))
+    #expect(md.hasPrefix("# Fix\n\nGL-1 · iOS\n\n`fedcba9876543210..0123456789abcdef` · 2 files, +1 \u{2212}1\n\nSum.\n\nNot shown:\n\n- `*.png`: 2 files (`a.png`, `b.png`)\n- `*.lock`: 0 files\n\n"))
     #expect(md.contains("## Chapter 1 · First\n\nBody.\n\n`Sources/A.swift` #2\n\n```diff\n@@ -1,4 +1,4 @@ func a() {\n one\n-two\n+TWO\n three\n four\n```\n"))
     #expect(md.contains("## Partial\n\n`Sources/A.swift` #2 (again)\n\n```diff\n@@ -1,4 +1,4 @@ func a() {\n\u{22EF}\n-two\n+TWO\n\u{22EF}\n```\n\n`logo.png`: Binary file changed\n"))
     #expect(md.contains("# Appendix\n\n## Extra\n\nMore.\n"))

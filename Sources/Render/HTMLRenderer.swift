@@ -47,11 +47,16 @@ struct Page {
             "HEADER": header,
             "NAV": nav(),
             "BODY": body,
-            "FOOTER": "Built from <code>\(HTML.escape(diff.range))</code> at <code>\(HTML.escape(Self.short(diff.head)))</code>",
+            "FOOTER": "Built from \(Self.exactRange(diff))",
         ])
     }
 
     static func short(_ sha: String) -> String { String(sha.prefix(8)) }
+
+    /// `<base>..<head>` as resolved commits, which `git diff` reproduces exactly; the full shas are in the tooltip.
+    static func exactRange(_ diff: Diff) -> String {
+        "<code title=\"\(HTML.escape(diff.base))..\(HTML.escape(diff.head))\">\(HTML.escape(short(diff.base)))..\(HTML.escape(short(diff.head)))</code>"
+    }
 
     /// "12 files, +340 −95".
     static func stat(_ diff: Diff) -> String {
@@ -66,7 +71,7 @@ struct Page {
     private func header() -> String {
         var out = "<h1>\(HTML.escape(story.title))</h1>\n"
         if let meta = story.meta, !meta.isEmpty { out += "<div class=\"meta\">\(HTML.escape(meta))</div>\n" }
-        out += "<div class=\"meta range\"><code>\(HTML.escape(diff.range))</code> \u{00B7} \(Self.stat(diff))</div>\n"
+        out += "<div class=\"meta range\">\(Self.exactRange(diff)) \u{00B7} \(Self.stat(diff))</div>\n"
         if !story.summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             out += "<div class=\"summary prose\">\(prose.render(story.summary, in: .init(anchor: "summary", sectionID: nil)))</div>\n"
         }
