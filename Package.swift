@@ -21,7 +21,11 @@ let grammarTargets: [Target] = grammars.map { suffix, path, hasScanner in
 let package = Package(
     name: "StoryGrafter",
     platforms: [.macOS(.v14)],
-    products: [.executable(name: "storygrafter", targets: ["storygrafter"])],
+    products: [
+        .executable(name: "storygrafter", targets: ["storygrafter"]),
+        // Tree-sitter highlighting for other apps (Dibs); styles(source:language:) and the grammar list.
+        .library(name: "Highlight", targets: ["Highlight"]),
+    ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
         .package(url: "https://github.com/swiftlang/swift-cmark", exact: "0.9.0"),
