@@ -3,32 +3,47 @@ import Testing
 @testable import StoryGrafterCore
 
 @Suite struct GuidePathsTests {
-    @Test func branchPathsLiveInTheCommonDir() throws {
+    @Test func branchPathsLiveInTheWorktreeAndGitIgnoresThem() throws {
         let repo = try TempRepo.standard()
         _ = try repo.git.run(["checkout", "-q", "-b", "nevyn/clock-drift"])
         let paths = try GuidePaths.forCurrentBranch(git: repo.git)
-        let dir = repo.url.appendingPathComponent(".git/review-guides/nevyn").resolvingSymlinksInPath().path
+        #expect(paths.location == .worktree)
+        let dir = repo.url.appendingPathComponent(".storygrafter/nevyn").resolvingSymlinksInPath().path
         #expect(paths.story.deletingLastPathComponent().resolvingSymlinksInPath().path == dir)
         #expect(paths.story.lastPathComponent == "clock-drift.md")
         #expect(paths.html.lastPathComponent == "clock-drift.html")
         #expect(paths.markdown.lastPathComponent == "clock-drift.guide.md")
+
+        try "story".write(to: paths.story, atomically: true, encoding: .utf8)
+        try "guide".write(to: paths.html, atomically: true, encoding: .utf8)
+        #expect(try repo.git.run(["status", "--porcelain", "--untracked-files=all"]) == "")
+        #expect(!FileManager.default.fileExists(atPath: repo.url.appendingPathComponent(".git/review-guides").path))
     }
 
-    @Test func worktreesShareTheCommonDir() throws {
+    @Test func eachWorktreeKeepsItsOwnStories() throws {
         let repo = try TempRepo.standard()
         let worktree = repo.url.appendingPathComponent("wt")
         _ = try repo.git.run(["worktree", "add", "-q", "-b", "other", worktree.path])
         let paths = try GuidePaths.forCurrentBranch(git: Git(repo: worktree))
         #expect(paths.story.resolvingSymlinksInPath().path ==
-                repo.url.appendingPathComponent(".git/review-guides/other.md").resolvingSymlinksInPath().path)
+                worktree.appendingPathComponent(".storygrafter/other.md").resolvingSymlinksInPath().path)
     }
 
-    @Test func unwritableGitDirFallsBackToTmpAndTheStoryIsFoundLater() throws {
+    @Test func aStoryLeftInsideGitByOlderVersionsIsStillFound() throws {
         let repo = try TempRepo.standard()
-        let gitDir = repo.url.appendingPathComponent(".git")
+        let legacy = repo.url.appendingPathComponent(".git/review-guides/feature.md")
+        try FileManager.default.createDirectory(at: legacy.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try "story".write(to: legacy, atomically: true, encoding: .utf8)
+        let paths = try GuidePaths.forCurrentBranch(git: repo.git)
+        #expect(paths.location == .gitDirectory)
+        #expect(paths.story.resolvingSymlinksInPath().path == legacy.resolvingSymlinksInPath().path)
+    }
+
+    @Test func unwritableWorktreeFallsBackToTmpAndTheStoryIsFoundLater() throws {
+        let repo = try TempRepo.standard()
         let fm = FileManager.default
-        try fm.setAttributes([.posixPermissions: 0o555], ofItemAtPath: gitDir.path)
-        defer { try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: gitDir.path) }
+        try fm.setAttributes([.posixPermissions: 0o555], ofItemAtPath: repo.url.path)
+        defer { try? fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: repo.url.path) }
 
         let sandboxed = try GuidePaths.forCurrentBranch(git: repo.git)
         #expect(sandboxed.location == .temporary)
@@ -36,7 +51,7 @@ import Testing
         defer { try? fm.removeItem(at: sandboxed.story.deletingLastPathComponent()) }
         try "story".write(to: sandboxed.story, atomically: true, encoding: .utf8)
 
-        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: gitDir.path)
+        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: repo.url.path)
         #expect(try GuidePaths.forCurrentBranch(git: repo.git) == sandboxed)
     }
 

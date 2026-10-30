@@ -2,7 +2,7 @@
 
 **Review guide** — The rendered page (HTML, or the Markdown export) that tells the story of a change next to the code it explains. Not: walkthrough, tour, report.
 
-**Story** — The Markdown source that the author writes and the engine renders into a review guide. Lives out of tree, by default at `<git-common-dir>/review-guides/<branch>.md`. Not: script, guide source.
+**Story** — The Markdown source that the author writes and the engine renders into a review guide. Never committed: by default at `.storygrafter/<branch>.md` in the worktree, which git ignores. Not: script, guide source.
 
 **Section** — One `##` block of a story: prose on the left, the code it places on the right. Not: chapter (a chapter is just a kicker some sections use).
 

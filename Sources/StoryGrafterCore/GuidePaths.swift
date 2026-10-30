@@ -11,10 +11,11 @@ public struct GuidePaths: Sendable, Equatable {
     public var location: Location?
 
     public enum Location: Sendable, Equatable {
-        /// `<git-common-dir>/review-guides/`, shared by every worktree of the clone.
+        /// `<worktree>/.storygrafter/`, which a `.gitignore` of `*` inside it keeps out of `git status`.
+        case worktree
+        /// `<git-common-dir>/review-guides/`, where storygrafter 0.3 and earlier kept stories. Read, never chosen anew.
         case gitDirectory
-        /// `/tmp/storygrafter/<repo>-<hash>/`, used when the git directory is not writable, as in sandboxed agents.
-        /// The directory survives until reboot.
+        /// `/tmp/storygrafter/<repo>-<hash>/`, used when the worktree is not writable. It survives until reboot.
         case temporary
     }
 
@@ -24,10 +25,13 @@ public struct GuidePaths: Sendable, Equatable {
 
     /// The default paths for the branch checked out in `git.repo`, with slashes in the branch name as subdirectories.
     ///
-    /// The story lives in `<git-common-dir>/review-guides/<branch>.md` when that directory can be written, and in
-    /// `/tmp/storygrafter/<repo>-<hash>/<branch>.md` otherwise. An existing story wins over writability, so a story
-    /// that a sandboxed agent wrote to `/tmp` is still found from outside the sandbox. `/tmp` rather than `$TMPDIR`,
-    /// because sandboxes set their own `$TMPDIR`. Creates the chosen directory.
+    /// The story lives in `<worktree>/.storygrafter/<branch>.md`, beside the code that it describes and inside the
+    /// directory that agent sandboxes let an agent write; `.git` is not such a directory. The tool writes a
+    /// `.gitignore` of `*` into `.storygrafter/`, so the directory never shows in `git status` and the repository's own
+    /// ignore files stay untouched. A story that already exists wins, checked in this order: the worktree,
+    /// `<git-common-dir>/review-guides/` (where 0.3 and earlier kept it), then `/tmp/storygrafter/<repo>-<hash>/`.
+    /// When the worktree cannot be written, a new story goes to `/tmp` (not `$TMPDIR`, which sandboxes replace).
+    /// Creates the chosen directory.
     /// - Throws: `UsageError` on a detached HEAD, `GitError` outside a repository.
     public static func forCurrentBranch(git: Git) throws -> GuidePaths {
         let symbolic = try Subprocess.run(executable: "/usr/bin/env",
@@ -41,14 +45,20 @@ public struct GuidePaths: Sendable, Equatable {
         let commonURL = (common.hasPrefix("/") ? URL(fileURLWithPath: common) : git.repo.appendingPathComponent(common))
             .standardizedFileURL
 
-        let primary = paths(base: commonURL.appendingPathComponent("review-guides").appendingPathComponent(branch),
-                            location: .gitDirectory)
+        let top = try git.run(["rev-parse", "--show-toplevel"]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let storyRoot = URL(fileURLWithPath: top).standardizedFileURL.appendingPathComponent(".storygrafter")
+
+        let worktree = paths(base: storyRoot.appendingPathComponent(branch), location: .worktree)
+        let legacy = paths(base: commonURL.appendingPathComponent("review-guides").appendingPathComponent(branch),
+                           location: .gitDirectory)
         let fallback = paths(base: temporaryRoot(forCommonDir: commonURL).appendingPathComponent(branch),
                              location: .temporary)
         let fm = FileManager.default
-        if fm.fileExists(atPath: primary.story.path) { return primary }
-        if fm.fileExists(atPath: fallback.story.path) { return fallback }
-        if canWrite(primary.story.deletingLastPathComponent()) { return primary }
+        for existing in [worktree, legacy, fallback] where fm.fileExists(atPath: existing.story.path) {
+            if existing.location == .worktree { _ = ignoring(storyRoot) }
+            return existing
+        }
+        if ignoring(storyRoot), canWrite(worktree.story.deletingLastPathComponent()) { return worktree }
         try fm.createDirectory(at: fallback.story.deletingLastPathComponent(), withIntermediateDirectories: true)
         return fallback
     }
@@ -73,6 +83,19 @@ public struct GuidePaths: Sendable, Equatable {
     private static func paths(base: URL, location: Location) -> GuidePaths {
         GuidePaths(story: base.appendingPathExtension("md"), html: base.appendingPathExtension("html"),
                    markdown: base.appendingPathExtension("guide.md"), location: location)
+    }
+
+    /// Creates `root` with a `.gitignore` of `*` in it, unless one is there already; false when that fails.
+    private static func ignoring(_ root: URL) -> Bool {
+        let ignore = root.appendingPathComponent(".gitignore")
+        if FileManager.default.fileExists(atPath: ignore.path) { return true }
+        do {
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            try Data("*\n".utf8).write(to: ignore)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /// Creates `directory` and a probe file in it. Permission bits don't tell: sandboxes deny writes that they allow.

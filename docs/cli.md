@@ -18,14 +18,16 @@ The range defaults to `<origin's default branch>...HEAD`, read from `refs/remote
 
 ## Default paths
 
-Stories and guides live in the repository's common git directory, which every worktree of a clone shares and which `git status` never shows:
+Stories and guides live in the worktree, where agents are allowed to write; agent sandboxes and permission modes refuse writes inside `.git`:
 
 ```
-$(git rev-parse --git-common-dir)/review-guides/<branch>.md
-$(git rev-parse --git-common-dir)/review-guides/<branch>.html   # or .guide.md for --format md
+<worktree>/.storygrafter/<branch>.md
+<worktree>/.storygrafter/<branch>.html   # or .guide.md for --format md
 ```
 
-When the common git directory is not writable, as in sandboxed agents, stories and guides live in `/tmp/storygrafter/<repo>-<hash>/<branch>.md` instead, until reboot. A story that already exists in either place wins, so a story written inside a sandbox is found from outside it. `storygrafter paths` and `storygrafter prompt` say which place is in use.
+storygrafter writes a `.gitignore` containing `*` into `.storygrafter/`. Git applies it to the whole directory, the `.gitignore` included, so nothing in it ever shows in `git status`, and the repository's own ignore files stay untouched. Each worktree keeps its own stories.
+
+A story that already exists elsewhere wins, in this order: `.storygrafter/` in the worktree, `<git-common-dir>/review-guides/` (where storygrafter 0.3 and earlier kept stories), then `/tmp/storygrafter/<repo>-<hash>/`. When the worktree is not writable, a new story goes to `/tmp`, where it lasts until reboot. `storygrafter paths` and `storygrafter prompt` say which place is in use.
 
 `<branch>` keeps its slashes as subdirectories. A detached HEAD is an error unless `--story` is given. With `--story x/foo.md`, the guide defaults to `x/foo.html` or `x/foo.guide.md`.
 
