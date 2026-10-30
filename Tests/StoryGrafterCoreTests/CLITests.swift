@@ -177,7 +177,7 @@ private struct JSONDocument: Decodable {
         let repo = try TempRepo.standard()
         let missing = run(["check", "--repo", repo.url.path])
         #expect(missing.status == 2)
-        #expect(missing.stderr.first?.contains("review-guides/feature.md") == true)
+        #expect(missing.stderr.first?.contains(".storygrafter/feature.md") == true)
         #expect(run(["list", "--bogus"]).status == 2)
         #expect(run(["--help"]).status == 0)
     }
@@ -205,7 +205,8 @@ private struct JSONDocument: Decodable {
         #expect(result.stdout.hasPrefix("# Context, computed by storygrafter"))
         #expect(result.stdout.contains("- Branch: feature, HEAD "))
         #expect(result.stdout.contains("- Range: origin/main...HEAD (a guess: origin's default branch is unknown"))
-        #expect(result.stdout.contains("/.git/review-guides/feature.md (not written yet)"))
+        #expect(result.stdout.contains("/.storygrafter/feature.md (not written yet)"))
+        #expect(result.stdout.contains("ignored by git through .storygrafter/.gitignore"))
         #expect(result.stdout.contains("# Writing a review guide with storygrafter"))
     }
 
@@ -222,9 +223,9 @@ private struct JSONDocument: Decodable {
         let repo = try TempRepo.standard()
         let result = run(["paths", "--repo", repo.url.path])
         #expect(result.status == 0)
-        #expect(result.stdout.hasPrefix("story  ") && result.stdout.contains("/.git/review-guides/feature.md"))
-        #expect(result.stdout.contains("/.git/review-guides/feature.guide.md"))
-        var isDirectory: ObjCBool = false
-        #expect(FileManager.default.fileExists(atPath: repo.url.appendingPathComponent(".git/review-guides").path, isDirectory: &isDirectory) && isDirectory.boolValue)
+        #expect(result.stdout.hasPrefix("story  ") && result.stdout.contains("/.storygrafter/feature.md"))
+        #expect(result.stdout.contains("/.storygrafter/feature.guide.md"))
+        let ignore = repo.url.appendingPathComponent(".storygrafter/.gitignore")
+        #expect((try? String(contentsOf: ignore, encoding: .utf8)) == "*\n")
     }
 }

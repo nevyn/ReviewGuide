@@ -11,7 +11,7 @@ struct CommonOptions: ParsableArguments {
     @Option(help: "The git diff range; overrides the story's 'range'. Default: <origin's default branch>...HEAD.")
     var range: String?
 
-    @Option(help: "The story file. Default: <git-common-dir>/review-guides/<branch>.md, or under /tmp/storygrafter when that is not writable.")
+    @Option(help: "The story file. Default: <worktree>/.storygrafter/<branch>.md, or under /tmp/storygrafter when the worktree is not writable.")
     var story: String?
 
     var git: Git { Git(repo: URL(fileURLWithPath: repo).standardizedFileURL) }
@@ -250,8 +250,15 @@ struct Prompt: ParsableCommand {
         if let paths {
             let exists = FileManager.default.fileExists(atPath: paths.story.path)
             lines.append("- Story: \(paths.story.path) (\(exists ? "exists: update it" : "not written yet"))")
-            if paths.location == .temporary {
-                lines.append("  The git directory is not writable here, so the story lives under /tmp until reboot. Commands find it there without --story.")
+            switch paths.location {
+            case .worktree?:
+                lines.append("  In this worktree, ignored by git through .storygrafter/.gitignore: write it with your file tools, and never commit it.")
+            case .gitDirectory?:
+                lines.append("  An older storygrafter put this story inside .git. Keep it there, or move it to .storygrafter/ in the worktree.")
+            case .temporary?:
+                lines.append("  The worktree is not writable here, so the story lives under /tmp until reboot. Commands find it there without --story.")
+            case nil:
+                break
             }
             lines.append("- Guide: \(paths.html.path)")
         } else {

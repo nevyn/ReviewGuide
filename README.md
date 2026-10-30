@@ -52,7 +52,7 @@ storygrafter check                 # every coverage and selector problem, or ok
 storygrafter build                 # write the guide and print its path
 ```
 
-Stories live out of tree, in `.git/review-guides/<branch>.md` (or under `/tmp/storygrafter/` where a sandbox makes `.git` read-only), and the guide is written next to them. The range defaults to `<origin's default branch>...HEAD`; set `range:` in the story or pass `--range`. `storygrafter list --json` is for agents. The docs are listed in [docs/index.md](docs/index.md).
+Stories live in `.storygrafter/<branch>.md` in the worktree, which git ignores through a `.gitignore` that storygrafter writes inside that directory, and the guide is written next to them. The range defaults to `<origin's default branch>...HEAD`; set `range:` in the story or pass `--range`. `storygrafter list --json` is for agents. The docs are listed in [docs/index.md](docs/index.md).
 
 ## Optional extras
 
