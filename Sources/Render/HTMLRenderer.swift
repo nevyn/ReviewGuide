@@ -44,6 +44,7 @@ struct Page {
         return Template.fill([
             "TITLE": HTML.escape(story.title),
             "HEAD": HTML.escape(diff.head),
+            "BASE": HTML.escape(diff.base),
             "HEADER": header,
             "NAV": nav(),
             "BODY": body,
@@ -203,7 +204,8 @@ struct Page {
             case .del: (" class=\"del\"", "\u{2212}")
             case .context: ("", "")
             }
-            out += "<tr\(cls)><td class=\"ln\">\(line.old.map(String.init) ?? "")</td><td class=\"ln\">\(line.new.map(String.init) ?? "")</td>"
+            let old = line.old.map(String.init) ?? "", new = line.new.map(String.init) ?? ""
+            out += "<tr\(cls) data-path=\"\(HTML.escape(file.path))\" data-old=\"\(old)\" data-new=\"\(new)\"><td class=\"ln\">\(old)</td><td class=\"ln\">\(new)</td>"
             out += "<td class=\"sg\">\(sign)</td><td class=\"code\">\(code)</td></tr>\n"
         }
         if shown.upperBound < hunk.lines.count { out += gap }

@@ -32,16 +32,16 @@ private var stationHunk: Hunk { station.hunks[0] }
     #expect(html.contains("<code title=\"fedcba9876543210..0123456789abcdef\">fedcba98..01234567</code> · 1 file, +1 \u{2212}1"))
     #expect(html.contains("Built from <code title=\"fedcba9876543210..0123456789abcdef\">fedcba98..01234567</code>"))
     #expect(!html.contains("HEAD"))
-    #expect(html.contains("<body data-head=\"0123456789abcdef\">"))
+    #expect(html.contains("<body data-head=\"0123456789abcdef\" data-base=\"fedcba9876543210\">"))
 }
 
 @Test func hunkRowsAndSpans() throws {
     let html = try renderHTML(resolved(sections: [section("a", code: [.hunk(file: station, hunk: stationHunk, lines: 0..<5, again: false)])]),
                               styler: WordStyler())
     #expect(html.contains("<div class=\"ctx\">@@ -10,4 +10,4 @@ func resync() {</div>"))
-    #expect(html.contains("<tr class=\"del\"><td class=\"ln\">11</td><td class=\"ln\"></td><td class=\"sg\">\u{2212}</td><td class=\"code\"><span class=\"hl-keyword\">let</span> <span class=\"hl-keyword chg\">b</span>"))
-    #expect(html.contains("<tr class=\"add\"><td class=\"ln\"></td><td class=\"ln\">11</td><td class=\"sg\">+</td>"))
-    #expect(html.contains("<tr><td class=\"ln\">10</td><td class=\"ln\">10</td><td class=\"sg\"></td><td class=\"code\"><span class=\"hl-keyword\">let</span>"))
+    #expect(html.contains("<tr class=\"del\" data-path=\"Sources/Clock/Station&lt;&amp;&gt;.swift\" data-old=\"11\" data-new=\"\"><td class=\"ln\">11</td><td class=\"ln\"></td><td class=\"sg\">\u{2212}</td><td class=\"code\"><span class=\"hl-keyword\">let</span> <span class=\"hl-keyword chg\">b</span>"))
+    #expect(html.contains("<tr class=\"add\" data-path=\"Sources/Clock/Station&lt;&amp;&gt;.swift\" data-old=\"\" data-new=\"11\"><td class=\"ln\"></td><td class=\"ln\">11</td><td class=\"sg\">+</td>"))
+    #expect(html.contains("<tr data-path=\"Sources/Clock/Station&lt;&amp;&gt;.swift\" data-old=\"10\" data-new=\"10\"><td class=\"ln\">10</td><td class=\"ln\">10</td><td class=\"sg\"></td><td class=\"code\"><span class=\"hl-keyword\">let</span>"))
     #expect(!html.contains("tr class=\"gap\""))
 }
 
